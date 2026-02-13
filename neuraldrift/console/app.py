@@ -74,6 +74,12 @@ class ConsoleApp:
         render_task = asyncio.create_task(self._render_loop())
         player_task = asyncio.create_task(self._player_poll())
 
+        # Initial render so panels have content before Live starts
+        self.layout.refresh_all(
+            input_prompt=self.input_handler.prompt_text,
+            input_hints=self.input_handler.hint_text,
+        )
+
         try:
             with Live(
                 self.layout.layout,
@@ -83,6 +89,7 @@ class ConsoleApp:
                 redirect_stderr=False,
             ) as live:
                 self._live = live
+                live.refresh()
                 await self._quit_event.wait()
         except KeyboardInterrupt:
             pass
