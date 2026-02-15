@@ -29,7 +29,7 @@ class EventPanel:
     def render(self) -> Panel:
         lines = Text()
         # Show last N entries that fit
-        visible = list(self.entries)[-20:]
+        visible = list(self.entries)[-30:]
         for ts, level, msg in visible:
             icon = EVENT_ICONS.get(level, "[dim][ ][/]")
             lines.append_text(Text.from_markup(f"[dim]{ts}[/] {icon} {msg}\n"))

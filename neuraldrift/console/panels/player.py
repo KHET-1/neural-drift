@@ -60,7 +60,7 @@ class PlayerPanel:
             )
 
         content = Table.grid(expand=True)
-        content.add_column()
+        content.add_column(ratio=1)
 
         # Now playing
         title = self.track_title or "[dim]No track loaded[/]"
@@ -77,7 +77,7 @@ class PlayerPanel:
         # Seek bar
         pos_str = _format_time(self.position)
         dur_str = _format_time(self.duration)
-        seek = _seek_bar(self.position, self.duration, 28)
+        seek = _seek_bar(self.position, self.duration, 36)
         vol_str = _vol_bar(self.volume)
         bar_line = Text()
         bar_line.append_text(Text.from_markup(f"[dim]{pos_str}[/] "))
@@ -85,8 +85,7 @@ class PlayerPanel:
         bar_line.append_text(Text.from_markup(f" [dim]{dur_str}[/]  Vol:{vol_str} {self.volume}%  {state}"))
         content.add_row(bar_line)
 
-        # Separator
-        content.add_row(Text.from_markup("[dim]" + "\u2500" * 50 + "[/]"))
+        content.add_row(Text())  # spacer
 
         # Playlist
         count = len(self.playlist)

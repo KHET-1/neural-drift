@@ -1,8 +1,6 @@
 """Brain panel — level/XP/stats + topic heatmap."""
 
-from rich.columns import Columns
 from rich.panel import Panel
-from rich.progress_bar import ProgressBar
 from rich.table import Table
 from rich.text import Text
 
@@ -11,7 +9,7 @@ FILL = "\u2588"  # █
 EMPTY = "\u2591"  # ░
 
 
-def _bar(value: float, maximum: float, width: int = 20) -> Text:
+def _bar(value: float, maximum: float, width: int = 24) -> Text:
     """Colored progress bar using block characters."""
     pct = min(value / maximum, 1.0) if maximum > 0 else 0
     filled = int(width * pct)
@@ -48,12 +46,12 @@ class BrainPanel:
 
     def render(self) -> Panel:
         # Left: brain status
-        status = Table.grid(padding=(0, 1))
-        status.add_column(width=18)
-        status.add_column()
+        status = Table.grid(padding=(0, 2), expand=True)
+        status.add_column(width=10)
+        status.add_column(ratio=1)
 
         status.add_row("[bold]Level[/]", f"[yellow]{self.level}[/] {self.title}")
-        status.add_row("[bold]XP[/]", _bar(self.xp_pct, 100.0, 16))
+        status.add_row("[bold]XP[/]", _bar(self.xp_pct, 100.0, 24))
         status.add_row("", f"[dim]{self.xp} XP ({self.xp_to_next} to next)[/]")
         status.add_row("[bold]Facts[/]", f"{self.facts} / {self.topics} topics")
         status.add_row("[bold]Agents[/]", f"{self.agents_active} active")
@@ -61,17 +59,17 @@ class BrainPanel:
         status.add_row("[bold]Musings[/]", str(self.musings))
 
         # Right: topic heatmap
-        hm = Table.grid(padding=(0, 1))
-        hm.add_column(width=14)
-        hm.add_column(width=12)
+        hm = Table.grid(padding=(0, 1), expand=True)
+        hm.add_column(width=16)
+        hm.add_column(ratio=1)
 
-        sorted_topics = sorted(self.heatmap.items(), key=lambda x: x[1], reverse=True)[:8]
+        sorted_topics = sorted(self.heatmap.items(), key=lambda x: x[1], reverse=True)[:10]
         max_temp = max((v for _, v in sorted_topics), default=1.0)
 
         if sorted_topics:
             for topic, temp in sorted_topics:
-                label = topic[:12]
-                bar_w = 8
+                label = topic[:15]
+                bar_w = 14
                 filled = int(bar_w * min(temp / max_temp, 1.0))
                 if temp / max_temp >= 0.7:
                     color = "green"
@@ -82,12 +80,16 @@ class BrainPanel:
                 bar = f"[{color}]{FILL * filled}[/][dim]{EMPTY * (bar_w - filled)}[/]"
                 hm.add_row(f"[dim]{label}[/]", Text.from_markup(bar))
 
-            remaining = len(self.heatmap) - 8
+            remaining = len(self.heatmap) - 10
             if remaining > 0:
                 hm.add_row(f"[dim]...+{remaining}[/]", "")
         else:
             hm.add_row("[dim]No topics yet[/]", "")
 
-        # Combine
-        cols = Columns([status, hm], padding=(0, 2))
-        return Panel(cols, title="[bold]BRAIN[/]", border_style="cyan")
+        # Combine side by side
+        combined = Table.grid(expand=True)
+        combined.add_column(ratio=1)
+        combined.add_column(ratio=1)
+        combined.add_row(status, hm)
+
+        return Panel(combined, title="[bold]BRAIN[/]", border_style="cyan")

@@ -32,10 +32,10 @@ class LayoutManager:
             Layout(name="footer", size=3),
         )
 
-        # Body: left (brain + events) | right (player + agents)
+        # Body: left (brain + events) gets more space | right (player + agents)
         root["body"].split_row(
-            Layout(name="left_col", ratio=1),
-            Layout(name="right_col", ratio=1),
+            Layout(name="left_col", ratio=3, minimum_size=50),
+            Layout(name="right_col", ratio=2, minimum_size=40),
         )
 
         root["left_col"].split_column(
