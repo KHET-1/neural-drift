@@ -1,0 +1,1855 @@
+{
+  "facts": {
+    "workflow": [
+      {
+        "fact": "Use banner() from rathin_utils for all tool headers",
+        "confidence": 95,
+        "source": "design standard",
+        "verified": true,
+        "learned": "2026-02-09 13:22:28",
+        "updated": "2026-02-09 13:22:28",
+        "times_recalled": 0,
+        "_base_knowledge": true
+      },
+      {
+        "fact": "Use recondir() helper or ~/projects/recon/target/date/ for scan output",
+        "confidence": 95,
+        "source": "project structure",
+        "verified": true,
+        "learned": "2026-02-09 13:22:28",
+        "updated": "2026-02-09 13:22:28",
+        "times_recalled": 0,
+        "_base_knowledge": true
+      },
+      {
+        "fact": "Token optimization for 20x Claude sessions: 1) CASESTAR_STATUS.md replaces full codebase reads (~100K tokens saved per session). 2) Brain facts replace re-reading files (~50 facts = 5K tokens vs ~50K tokens reading files). 3) Targeted reads over glob sweeps. 4) Parallel tool calls. 5) Subagents for exploration (isolated context). 6) MEMORY.md pointers to deep files instead of inline detail.",
+        "confidence": 98,
+        "source": "session optimization 2026-02-21",
+        "verified": true,
+        "learned": "2026-02-21 14:49:30",
+        "updated": "2026-02-21 14:49:30",
+        "times_recalled": 0
+      },
+      {
+        "fact": "Zombie dual-brain RAG wired 2026-02-27: zombie.py now searches Main Brain (35 active facts) + Zombie Brain (234 foundational facts) via separate BrainEmbeddings instances (prefix= param). Results merged by cosine score, top_k total. Facts tagged [BRAIN:topic] or [ZOMBIE:topic] in LLM prompt. Embeddings auto-build on first init (~12s). Files: zombie_brain_embeddings.npy + zombie_brain_embed_index.json.",
+        "confidence": 99,
+        "source": "implemented 2026-02-27",
+        "verified": true,
+        "learned": "2026-02-27 13:19:12",
+        "updated": "2026-02-27 13:19:12",
+        "times_recalled": 0
+      },
+      {
+        "fact": "BrainEmbeddings prefix= param (2026-02-27): added prefix arg (default \"brain\") so multiple embedding indices coexist in same directory. zombie_brain prefix creates zombie_brain_embeddings.npy + zombie_brain_embed_index.json. Backwards-compatible \u2014 existing brain_embeddings.npy unchanged.",
+        "confidence": 99,
+        "source": "implemented 2026-02-27",
+        "verified": true,
+        "learned": "2026-02-27 13:19:15",
+        "updated": "2026-02-27 13:19:15",
+        "times_recalled": 0
+      }
+    ],
+    "diamond-drill": [
+      {
+        "fact": "Diamond Drill is a 14,157-line Rust forensic disk recovery tool inside CaseStar-Turbo at ~/CaseStar-Turbo/diamond-drill/",
+        "confidence": 95,
+        "source": "code-audit-2026-02-13",
+        "verified": true,
+        "learned": "2026-02-13 08:06:09",
+        "updated": "2026-02-13 08:06:09",
+        "times_recalled": 0
+      },
+      {
+        "fact": "Diamond Drill has 21 modules: 18 production-ready, GUI ~40% (iced 0.12 broken), easy_mode ~30% incomplete",
+        "confidence": 95,
+        "source": "code-audit-2026-02-13",
+        "verified": true,
+        "learned": "2026-02-13 08:06:09",
+        "updated": "2026-02-13 08:06:09",
+        "times_recalled": 0
+      },
+      {
+        "fact": "Diamond Drill swarm: 5 agents (Scan/Chunk/Embed/Heal/Export) via crossbeam-channel, supervised by SwarmOrchestrator",
+        "confidence": 95,
+        "source": "code-audit-2026-02-13",
+        "verified": true,
+        "learned": "2026-02-13 08:06:09",
+        "updated": "2026-02-13 08:06:09",
+        "times_recalled": 0
+      },
+      {
+        "fact": "Diamond Drill embedder: 4-backend fallback chain LM Studio \u2192 Ollama \u2192 candle GPU \u2192 Blake3 hash fallback",
+        "confidence": 95,
+        "source": "code-audit-2026-02-13",
+        "verified": true,
+        "learned": "2026-02-13 08:06:09",
+        "updated": "2026-02-13 08:06:09",
+        "times_recalled": 0
+      },
+      {
+        "fact": "CRITICAL: bincode is DEAD (RUSTSEC-2025-0141) - crate intentionally broken on crates.io, must migrate to postcard",
+        "confidence": 99,
+        "source": "rustsec-2025-0141",
+        "verified": true,
+        "learned": "2026-02-13 08:06:09",
+        "updated": "2026-02-13 08:06:09",
+        "times_recalled": 0
+      },
+      {
+        "fact": "CRITICAL: crossbeam-channel has double-free CVE (RUSTSEC-2025-0024) - must update to 0.5.15",
+        "confidence": 99,
+        "source": "rustsec-2025-0024",
+        "verified": true,
+        "learned": "2026-02-13 08:06:09",
+        "updated": "2026-02-13 08:06:09",
+        "times_recalled": 0
+      },
+      {
+        "fact": "CRITICAL: Blake3 is NOT court-accepted for forensic evidence - SHA-256 required under FRE 902(13)/902(14), need dual-hash",
+        "confidence": 98,
+        "source": "web-research-forensic-hash",
+        "verified": true,
+        "learned": "2026-02-13 08:06:09",
+        "updated": "2026-02-13 08:06:09",
+        "times_recalled": 0
+      },
+      {
+        "fact": "iced GUI: project on 0.12, Application trait removed in 0.13+, latest is 0.14 with reactive rendering - must rewrite GUI layer",
+        "confidence": 95,
+        "source": "web-research-iced-2026",
+        "verified": true,
+        "learned": "2026-02-13 08:06:09",
+        "updated": "2026-02-13 08:06:09",
+        "times_recalled": 0
+      },
+      {
+        "fact": "Diamond Drill v0.1.0: 34 source files, 14157 LOC, 109 tests passing, 6 benchmark suites, zero clippy warnings",
+        "confidence": 99,
+        "source": "code-audit-2026-02-17",
+        "verified": true,
+        "learned": "2026-02-17 13:25:33",
+        "updated": "2026-02-17 13:25:33",
+        "times_recalled": 0
+      },
+      {
+        "fact": "Diamond Drill actually has 25+ modules (not 21): 18+ production-ready, GUI at Phase 0, utils empty stub, easy_mode 95%",
+        "confidence": 98,
+        "source": "code-audit-2026-02-17",
+        "verified": true,
+        "learned": "2026-02-17 13:25:33",
+        "updated": "2026-02-17 13:25:33",
+        "times_recalled": 0
+      },
+      {
+        "fact": "Diamond Drill latest git: swarm v2 with SSE streaming, result cache, parallel eval, security hardening \u2014 5-7 commits/week velocity",
+        "confidence": 95,
+        "source": "code-audit-2026-02-17",
+        "verified": true,
+        "learned": "2026-02-17 13:25:33",
+        "updated": "2026-02-17 13:25:33",
+        "times_recalled": 0
+      },
+      {
+        "fact": "Diamond Drill GUI plan: 4 phases in DESIGN.md (647 lines) \u2014 Phase 0 done, Phase 1 next (studio.rs, theme, mission select)",
+        "confidence": 95,
+        "source": "code-audit-2026-02-17",
+        "verified": true,
+        "learned": "2026-02-17 13:25:33",
+        "updated": "2026-02-17 13:25:33",
+        "times_recalled": 0
+      }
+    ],
+    "casestar-turbo": [
+      {
+        "fact": "CaseStar-Turbo: full-stack forensic intelligence platform for public defenders at ~/CaseStar-Turbo/",
+        "confidence": 95,
+        "source": "code-audit-2026-02-13",
+        "verified": true,
+        "learned": "2026-02-13 08:06:09",
+        "updated": "2026-02-13 08:06:09",
+        "times_recalled": 0
+      },
+      {
+        "fact": "Core insight: Brain + semantic embeddings + local zombie AI = CaseStar document intelligence engine. Patient uploads medical records \u2192 extracted as structured facts \u2192 embedded \u2192 local LLM answers questions by citing actual documents. Private (HIPAA-safe), free, accurate. This is the bridge between rathin_utils Brain system and CaseStar product.",
+        "confidence": 99,
+        "source": "architectural vision session 2026-02-20",
+        "verified": true,
+        "learned": "2026-02-20 18:32:36",
+        "updated": "2026-02-20 18:32:36",
+        "times_recalled": 0
+      },
+      {
+        "fact": "P0 FIX: embedding_status field added to Chunk dataclass (\"real\", \"zero_fallback\", \"none\"). Zero-vectors now filtered from vector search in rag_service.py. Magnitude check (norm < 1e-6) as safety net for legacy data. embed_with_status() returns (embedding, status) tuples.",
+        "confidence": 99,
+        "source": "implemented 2026-02-21",
+        "verified": true,
+        "learned": "2026-02-21 14:22:40",
+        "updated": "2026-02-21 14:22:40",
+        "times_recalled": 0
+      },
+      {
+        "fact": "P0 FIX: BM25 index now cached per HybridRAG instance via _build_bm25_index(). Uses rank_bm25.BM25Okapi (proper IDF scoring). Index built once, invalidated when chunk count changes. Eliminates O(N) full-corpus tokenization per query.",
+        "confidence": 99,
+        "source": "implemented 2026-02-21",
+        "verified": true,
+        "learned": "2026-02-21 14:22:43",
+        "updated": "2026-02-21 14:22:43",
+        "times_recalled": 0
+      },
+      {
+        "fact": "CaseStar private fork created 2026-02-27: github.com/KHET-1/CaseStar (private). Remote 'casestar' added to ~/CaseStar-Turbo/ repo alongside origin (CaseStar-Turbo). Both remotes synced on single 'main' branch. Original CaseStar-Turbo remains public and untouched.",
+        "confidence": 99,
+        "source": "session 2026-02-27",
+        "verified": true,
+        "learned": "2026-02-27 10:56:57",
+        "updated": "2026-02-27 10:56:57",
+        "times_recalled": 0
+      },
+      {
+        "fact": "Rescued services integration (2026-02-27): 47 files from 4 drives integrated. 9 Python services moved to backend/app/services/ (ocr_enhanced, intelligent_qa_cache, knowledge_base_builder, knowledge_rag_service, knowledge_worker, persona_loader, audioslooth_detector, transcription_service, diterm_service). Rust diterm \u2192 tools/diterm/. Docs \u2192 docs/rescued/{instructions,commanders}. rescued/ dir deleted.",
+        "confidence": 99,
+        "source": "session 2026-02-27",
+        "verified": true,
+        "learned": "2026-02-27 10:57:02",
+        "updated": "2026-02-27 10:57:02",
+        "times_recalled": 0
+      },
+      {
+        "fact": "POST /agent/route endpoint added to agent_routes.py (2026-02-27). Calls route_to_agent() from agent_router.py \u2014 auto-routes queries to specialized agents (MEDICAL/TIMELINE/CHAIN/GENERAL) via keyword detection. Supports Ollama and LM Studio backends with auto-detection.",
+        "confidence": 99,
+        "source": "session 2026-02-27",
+        "verified": true,
+        "learned": "2026-02-27 10:57:02",
+        "updated": "2026-02-27 10:57:02",
+        "times_recalled": 0
+      },
+      {
+        "fact": "Dependabot 0 vulnerabilities (2026-02-27): patched jspdf ^4.1.0\u2192^4.2.0 (3 high), added rollup >=4.59.0 override (1 high), npm audit fix resolved minimatch (6 high ReDoS) and ajv (1 moderate ReDoS) via lockfile refresh. All 11 alerts now closed.",
+        "confidence": 99,
+        "source": "session 2026-02-27",
+        "verified": true,
+        "learned": "2026-02-27 10:57:02",
+        "updated": "2026-02-27 10:57:02",
+        "times_recalled": 0
+      },
+      {
+        "fact": "v1.1 ingestion pipeline (post-1024d migration 2026-02-27): Upload\u2192Parse(PyMuPDF/Tesseract/EasyOCR)\u2192Chunk(token-based, 300-1000 tokens, content-aware 6 profiles)\u2192Embed(LM Studio mxbai-embed-large-v1 1024d primary GPU, FastEmbed bge-large-en-v1.5 1024d CPU fallback)\u2192Store(ChromaDB HNSW M=32 ef=200)\u2192Search(Hybrid BM25+Vector RRF+MMR). Ollama nomic-embed-text 768d removed from chain.",
+        "confidence": 99,
+        "source": "implemented 2026-02-27",
+        "verified": true,
+        "learned": "2026-02-27 18:33:39",
+        "updated": "2026-02-27 18:33:39",
+        "times_recalled": 0
+      },
+      {
+        "fact": "LM Studio TTL idle timeout: models auto-unload after idle, API returns HTTP 400. Since LM Studio is now PRIMARY embed backend, this is critical \u2014 embedding_service.py sets _lmstudio_available=False on failure and falls through to FastEmbed. Always run lms load MODEL --gpu max before ingestion. Check with lms ps. Reload ~3s.",
+        "confidence": 95,
+        "source": "discovered 2026-02-27",
+        "verified": true,
+        "learned": "2026-02-27 18:33:43",
+        "updated": "2026-02-27 18:33:43",
+        "times_recalled": 0
+      },
+      {
+        "fact": "LM Studio mxbai-embed-large-v1 is PRIMARY embedding backend \u2014 FULLY migrated (2026-02-27). Every embedding caller now routes through LM Studio 1024d: embedding_service.py, chroma_client.py (LMStudioEmbeddingFunction), tasks.py Celery workers, timeline_engine.py, service_health.py, llamaindex_rag.py. Ollama nomic-embed-text completely removed from embedding chain. Only 4 rescued/secondary services still import ollama (knowledge_base_builder, knowledge_rag_service, date_conflict_detector, criminal_defense). Config: EMBEDDING_BACKEND=lmstudio, LM_STUDIO_BASE_URL=http://localhost:1234/v1, LMSTUDIO_EMBED_MODEL=text-embedding-mxbai-embed-large-v1.",
+        "confidence": 99,
+        "source": "session 2026-02-27",
+        "verified": true,
+        "learned": "2026-02-27 22:16:27",
+        "updated": "2026-02-27 22:16:27",
+        "times_recalled": 0
+      },
+      {
+        "fact": "1024d embedding migration COMPLETE in 2 commits (2026-02-27): Commit 10e9f6b \u2014 13 files, central dimension + config + fallback chain. Commit 3912b44 \u2014 7 files, purged all callers bypassing embedding_service.py (chroma_client OllamaEmbeddingFunction\u2192LMStudioEmbeddingFunction, Celery tasks, timeline_engine import ollama, service_health check, llm_config default, llamaindex_rag). Total: 20 files touched. Also fixed: is_zero_vector() numpy bug, async contradiction test bug, biopython dep. Both remotes synced.",
+        "confidence": 99,
+        "source": "session 2026-02-27",
+        "verified": true,
+        "learned": "2026-02-27 22:16:32",
+        "updated": "2026-02-27 22:16:32",
+        "times_recalled": 0
+      },
+      {
+        "fact": "P1 Ollama purge + test suite fix (2026-02-28): 5 files still called Ollama directly (chroma_client.py, tasks.py, service_health.py, llm_config.py, timeline_engine.py) \u2014 all rewritten to use LM Studio httpx. Then 33 test failures from 1024d migration fixed across 4 test files (test_embedding_service, test_vector_store, test_config_refactor, test_swarm_orchestrator). Tests updated for new LM Studio interface, VectorStore API, 1024d dimensions, and bool DISABLE_AUTH. Full suite: 729 passed / 64 pre-existing failures (timeouts + route 404s). Both remotes synced at 4049a57.",
+        "confidence": 99,
+        "source": "session 2026-02-28",
+        "verified": true,
+        "learned": "2026-02-28 11:03:30",
+        "updated": "2026-02-28 11:03:30",
+        "times_recalled": 0
+      },
+      {
+        "fact": "Git state (2026-02-28): Both remotes (origin=CaseStar-Turbo, casestar=CaseStar) synced at 4049a57 on main. 3 commits this session: 10e9f6b (1024d migration), 3912b44 (P1 Ollama purge), 4049a57 (test suite fixes). pytest-timeout installed in venv.",
+        "confidence": 99,
+        "source": "session 2026-02-28",
+        "verified": true,
+        "learned": "2026-02-28 11:03:35",
+        "updated": "2026-02-28 11:03:35",
+        "times_recalled": 0
+      }
+    ],
+    "bluetooth_audio": [
+      {
+        "fact": "WirePlumber bluez5.enable-hw-volume=true causes silent A2DP transport on Devialet Phantom II - data flows in pw-top and btmon shows packets sent but no sound. Fix: set bluez5.enable-hw-volume=false in WirePlumber rules.",
+        "confidence": 95,
+        "source": "hands-on debugging 2026-02-18",
+        "verified": true,
+        "learned": "2026-02-18 15:28:49",
+        "updated": "2026-02-18 15:28:49",
+        "times_recalled": 4
+      },
+      {
+        "fact": "WirePlumber session.suspend-timeout-seconds must be 0 for Phantom II BT - default suspend behavior causes transport to silently fail on resume. Config file: ~/.config/wireplumber/wireplumber.conf.d/51-phantom-fixes.conf",
+        "confidence": 95,
+        "source": "hands-on debugging 2026-02-18",
+        "verified": true,
+        "learned": "2026-02-18 15:28:49",
+        "updated": "2026-02-18 15:28:49",
+        "times_recalled": 4
+      },
+      {
+        "fact": "WirePlumber 50-bluez-config.conf MUST use bluez5.codecs=[sbc] only for Phantom II. AAC causes spa.bluez5 config error -95, SBC-XQ crashes transport. Having AAC/SBC-XQ in codec list causes WirePlumber link activation failure even when falling back to SBC.",
+        "confidence": 95,
+        "source": "hands-on debugging 2026-02-18",
+        "verified": true,
+        "learned": "2026-02-18 15:28:49",
+        "updated": "2026-02-18 15:28:49",
+        "times_recalled": 1
+      },
+      {
+        "fact": "Linux kernel 6.15.5+ has L2CAP MTU negotiation regression (BlueZ #1422/#1448) - kernel sends SBC frames exceeding negotiated MTU, speaker receives but cannot decode. Symptoms: transport active, packets flowing, silence. Kernel 6.12.x unaffected.",
+        "confidence": 85,
+        "source": "BlueZ GitHub issues #1422 #1448",
+        "verified": true,
+        "learned": "2026-02-18 15:28:49",
+        "updated": "2026-02-18 15:28:49",
+        "times_recalled": 2
+      },
+      {
+        "fact": "After bluetoothctl remove+re-pair, first connect gets ACL with A2DP endpoints. Subsequent reconnects after WirePlumber restart fall back to LE-only (no A2DP). Fix: always remove+re-pair for fresh ACL link if LE-only detected via hcitool con.",
+        "confidence": 90,
+        "source": "hands-on debugging 2026-02-18",
+        "verified": true,
+        "learned": "2026-02-18 15:28:49",
+        "updated": "2026-02-18 15:28:49",
+        "times_recalled": 0
+      },
+      {
+        "fact": "Devialet Phantom II does NOT auto-switch to Bluetooth source if previously on WiFi (Spotify Connect/AirPlay). Must use Devialet app to select BT input or factory reset. Speaker accepts A2DP and receives data but routes output to last WiFi source.",
+        "confidence": 80,
+        "source": "Devialet support docs + community forums",
+        "verified": true,
+        "learned": "2026-02-18 15:28:49",
+        "updated": "2026-02-18 15:28:49",
+        "times_recalled": 1
+      },
+      {
+        "fact": "Silent A2DP diagnostic checklist: 1) hcitool con - ACL not LE, 2) pactl list cards - a2dp-sink active, 3) pw-top - QUANT/RATE non-zero, 4) btmon - ACL packet count, 5) journalctl wireplumber - link failures/config errors, 6) dbus MediaTransport1 - State=active",
+        "confidence": 90,
+        "source": "hands-on debugging 2026-02-18",
+        "verified": true,
+        "learned": "2026-02-18 15:28:49",
+        "updated": "2026-02-18 15:28:49",
+        "times_recalled": 4
+      },
+      {
+        "fact": "PipeWire quantum 512 (10.7ms) causes SBC Bluetooth broken pipe errors on Devialet Phantom II. Minimum safe quantum is 1024 (21.3ms). DiamondForge uses pw-metadata clock.force-quantum at runtime and should NOT force below 1024 when BT sink is active.",
+        "confidence": 0.95,
+        "source": "live testing 2026-03-01",
+        "verified": true,
+        "learned": "2026-03-01 12:53:33",
+        "updated": "2026-03-01 12:53:33",
+        "times_recalled": 0
+      },
+      {
+        "fact": "After removing Bluetooth pairing and re-pairing Phantom II, BlueZ may show le-connection-abort-by-local errors for 30-60 seconds. Fix: power cycle both the BT adapter (bluetoothctl power off/on) AND the Phantom (unplug 10s). The Intel AX211 adapter needs extended cooldown after pairing changes.",
+        "confidence": 0.9,
+        "source": "live testing 2026-03-01",
+        "verified": true,
+        "learned": "2026-03-01 12:53:38",
+        "updated": "2026-03-01 12:53:38",
+        "times_recalled": 0
+      }
+    ],
+    "pipewire": [
+      {
+        "fact": "Multiple PipeWire restarts in a session break Firefox audio completely - Firefox holds stale PipeWire socket connections, videos/audio refuse to play (stuck at 0). Ghost streams in pactl. Simple Firefox restart insufficient - full system reboot needed.",
+        "confidence": 90,
+        "source": "hands-on debugging 2026-02-18",
+        "verified": true,
+        "learned": "2026-02-18 15:28:49",
+        "updated": "2026-02-18 15:28:49",
+        "times_recalled": 0
+      }
+    ],
+    "ollama": [
+      {
+        "fact": "Ollama 0.17.4 installed at /usr/local/bin/ollama with CUDA libs at /usr/local/lib/ollama/. Upgrade: download tar.zst from GitHub releases, extract, sudo cp binary + libs, restart service.",
+        "confidence": 100,
+        "source": "upgraded 2026-02-27",
+        "verified": true,
+        "learned": "2026-02-27 03:33:30",
+        "updated": "2026-02-27 03:33:30",
+        "times_recalled": 0
+      }
+    ],
+    "maintenance": [
+      {
+        "fact": "pip cache can grow to 4+ GB silently. Run pip3 cache purge periodically. Checked 2026-02-27: purged 4.7 GB.",
+        "confidence": 95,
+        "source": "confirmed 2026-02-27",
+        "verified": true,
+        "learned": "2026-02-27 03:33:30",
+        "updated": "2026-02-27 03:33:30",
+        "times_recalled": 0
+      }
+    ],
+    "neon_rush": [
+      {
+        "fact": "Asteroid breakup mechanic implemented (2026-02-28): Large(45HP,500pts)\u21922 Medium(30HP,250pts)\u21922 Small(15HP,100pts)\u2192death. Full chain=11 bolts, 4 terminal kills, 1400pts. take_hit() returns dict {terminal:bool, fragments:[...]} \u2014 truthy like True but carries fragment spawn info. Only terminal kills count toward ASTEROID_CLEAR_TARGET(20). Nuke bypasses fragmentation. asteroid_split SFX added.",
+        "confidence": 99,
+        "source": "implemented 2026-02-28",
+        "verified": true,
+        "learned": "2026-02-28 21:04:03",
+        "updated": "2026-02-28 21:04:03",
+        "times_recalled": 0
+      },
+      {
+        "fact": "V2 headless road_geometry bug (2026-02-28): road_geometry.advance()+compute_projection() only called in bg.update_and_draw() which is inside draw(). Headless mode never calls draw() so V2 sprite projection stays stale. Fix: bg.tick_road(speed) method callable from update() with _rg_ticked flag to prevent double-advance when draw IS called.",
+        "confidence": 99,
+        "source": "fixed 2026-02-28",
+        "verified": true,
+        "learned": "2026-02-28 21:04:03",
+        "updated": "2026-02-28 21:04:03",
+        "times_recalled": 0
+      },
+      {
+        "fact": "desert_sprites.py init order bug (2026-02-28): Obstacle/Coin/PowerUp classes called self._draw() before self.tier and self.pulse were assigned. _draw() uses both. Fix: set self.tier and self.pulse BEFORE calling self._draw(). Same class of bug as the FONT_POWERUP import aliasing \u2014 attribute access before assignment.",
+        "confidence": 99,
+        "source": "fixed 2026-02-28",
+        "verified": true,
+        "learned": "2026-02-28 21:04:03",
+        "updated": "2026-02-28 21:04:03",
+        "times_recalled": 0
+      },
+      {
+        "fact": "Autoplay AI fixes (2026-02-28): 1) FakeKeys heuristic never fired heat bolts during asteroid phase (only boss_active). Added mode.phase==\"asteroids\" check. 2) V2 asteroids scatter across road width but bolts go straight up \u2014 AI must steer toward nearest asteroid x position. Without targeting, bolts miss all V2 road-projected asteroids. 3) Learning brain boost logic also needed asteroid phase awareness (save heat for bolts).",
+        "confidence": 99,
+        "source": "fixed 2026-02-28",
+        "verified": true,
+        "learned": "2026-02-28 21:04:03",
+        "updated": "2026-02-28 21:04:03",
+        "times_recalled": 0
+      },
+      {
+        "fact": "Autoplay test results post-asteroid-breakup (2026-02-28): Tier 1 \u2014 6/6 VICTORY, avg 46k frames, 190k pts. Tier 2 (evo) \u2014 5/6 runs beat 3/3 bosses and started cycling, 2 runs beat 4 bosses. Commit 7e65d98: 23 files, +2764/-380 lines. Includes V2 evolution tier, pseudo-3D road projection, and visual upgrades.",
+        "confidence": 95,
+        "source": "autoplay tests 2026-02-28",
+        "verified": true,
+        "learned": "2026-02-28 21:04:03",
+        "updated": "2026-02-28 21:04:03",
+        "times_recalled": 0
+      }
+    ],
+    "neonrush": [
+      {
+        "fact": "V2 Graphics Upgrade fully implemented and verified \u2014 core/vfx.py (palettes, gradients, glow, dither, scanlines, AmbientParticles, VFXState), all 3 backgrounds upgraded (desert synthwave sunset+sun+embers, excitebike clouds+vegetation+headlight, micromachines grid+env details), all sprites V2, HUD V2 neon borders+text glow+animated heat bar, evolution transition effect",
+        "confidence": 0.95,
+        "source": "session-2026-02-28",
+        "verified": true,
+        "learned": "2026-02-28 21:06:45",
+        "updated": "2026-02-28 21:06:45",
+        "times_recalled": 0
+      },
+      {
+        "fact": "GOD_MODE=True in shared/game_mode.py base class \u2014 keeps invincible_timer>=10 and lives>=3 every frame for all players",
+        "confidence": 0.99,
+        "source": "session-2026-02-28",
+        "verified": true,
+        "learned": "2026-02-28 21:06:45",
+        "updated": "2026-02-28 21:06:45",
+        "times_recalled": 0
+      },
+      {
+        "fact": "All movement speeds boosted ~30% across all 3 modes: Desert(accel 1.0, max 16, lateral 6.5, boost 5, surge 20), Excitebike(init 4, accel 0.4, max 16, boost 5, surge 20), MicroMachines(turn 0.065, accel 0.26, max 8, boost 4, surge 10)",
+        "confidence": 0.99,
+        "source": "session-2026-02-28",
+        "verified": true,
+        "learned": "2026-02-28 21:06:45",
+        "updated": "2026-02-28 21:06:45",
+        "times_recalled": 0
+      },
+      {
+        "fact": "Auto-fire system: free (no heat cost), 12-frame cooldown, silent. Triggers when boss alive or asteroids on screen. try_fire_heat_bolt(keys, auto_fire=False) in all 3 sprite files",
+        "confidence": 0.99,
+        "source": "session-2026-02-28",
+        "verified": true,
+        "learned": "2026-02-28 21:06:45",
+        "updated": "2026-02-28 21:06:45",
+        "times_recalled": 0
+      },
+      {
+        "fact": "Boss thresholds halved: Desert(2.5km/2500score/90s), Excitebike(1.5km/4000score/60s), MicroMachines(1.0km/6000score/60s)",
+        "confidence": 0.99,
+        "source": "session-2026-02-28",
+        "verified": true,
+        "learned": "2026-02-28 21:06:45",
+        "updated": "2026-02-28 21:06:45",
+        "times_recalled": 0
+      },
+      {
+        "fact": "Road smoothing: _CURVE_SCALE=400, sections 100-260 long, straights 3x weighted, max curve intensity 0.25, ease zones 40% of section (max 50), smoothing lerp 0.03, player drift force 0.4",
+        "confidence": 0.99,
+        "source": "session-2026-02-28",
+        "verified": true,
+        "learned": "2026-02-28 21:06:45",
+        "updated": "2026-02-28 21:06:45",
+        "times_recalled": 0
+      },
+      {
+        "fact": "Vehicle tilt: sprite rotates based on road curve + steering input. target_tilt = -curve*12 +/- 5 for steering, clamped -15 to 15, lerp 0.15. Uses pygame.transform.rotate on base_image",
+        "confidence": 0.99,
+        "source": "session-2026-02-28",
+        "verified": true,
+        "learned": "2026-02-28 21:06:45",
+        "updated": "2026-02-28 21:06:45",
+        "times_recalled": 0
+      },
+      {
+        "fact": "CLI args: -m/--mode (desert|excitebike|micro) and -t/--tier (1=V1, 2=V2). Parsed in _parse_args(), applied in start_game(). Default: desert tier 1",
+        "confidence": 0.99,
+        "source": "session-2026-02-28",
+        "verified": true,
+        "learned": "2026-02-28 21:06:45",
+        "updated": "2026-02-28 21:06:45",
+        "times_recalled": 0
+      },
+      {
+        "fact": "Fullscreen by default: core/display.py is_fullscreen=True. Toggle with F11",
+        "confidence": 0.99,
+        "source": "session-2026-02-28",
+        "verified": true,
+        "learned": "2026-02-28 21:06:45",
+        "updated": "2026-02-28 21:06:45",
+        "times_recalled": 0
+      },
+      {
+        "fact": "Desert sun: 180px pre-rendered surface, rich gradient body, 10 glow rings, 6 synthwave stripes, half-sunk into horizon, slow bob (0.002). Dither overlay removed. Heat shimmer slowed 3x",
+        "confidence": 0.99,
+        "source": "session-2026-02-28",
+        "verified": true,
+        "learned": "2026-02-28 21:06:45",
+        "updated": "2026-02-28 21:06:45",
+        "times_recalled": 0
+      },
+      {
+        "fact": "Boss Rush QA mode (2026-03-01): --boss-rush flag zeroes BOSS_DISTANCE/SCORE/TIME_THRESHOLD and sets ASTEROID_CLEAR_TARGET=3 so boss spawns in ~5s. --god flag sets GOD_MODE=True (invincible). Both applied via _apply_cli_flags(mode) helper called in 3 places: start_game(), advance_to_next_mode() normal path, and advance_to_next_mode() evolution cycle path. Combine with -m desert/excitebike/micro for per-mode QA. Commit 3690a37.",
+        "confidence": 99,
+        "source": "implemented 2026-03-01",
+        "verified": true,
+        "learned": "2026-03-01 09:50:59",
+        "updated": "2026-03-01 09:50:59",
+        "times_recalled": 0
+      },
+      {
+        "fact": "New weapon powerup system (post-2026-02-28): 9 powerups total. Original 4: Shield(600f), Magnet(480f), SlowMo(300f), Nuke(instant). New 5: Phase/Ghost(360f, pass through obstacles), Surge(180f, speed boost+invincible), Multishot(360f, 3-bolt fan \u00b115\u00b0), Rockets(480f, homing, 40dmg, fire every 60f), Orbit8(600f, 8 orbs in lemniscate pattern, 20dmg each, absorb boss hazards). All defined in shared/powerup_handler.py apply_powerup(). Weapon sprites in shared/projectiles.py (MultishotBolt, HomingRocket, OrbitOrb).",
+        "confidence": 99,
+        "source": "code audit 2026-03-01",
+        "verified": true,
+        "learned": "2026-03-01 09:55:04",
+        "updated": "2026-03-01 09:55:04",
+        "times_recalled": 0
+      },
+      {
+        "fact": "MenuController extracted to core/menu.py (pre-2026-03-01): encapsulates title-screen state (menu_row, menu_col, selected_diff, ai_reward_mult, target_fps, logging_enabled). handle_event() returns \"launch\"/\"quit\"/None. get_launch_config() returns (num_players, ai_config). Supports 5 launch modes: 1P Solo, 2P Coop, 1P+AI, AI Solo, 2P AI. Toggles row merged: Sound(M key), Evolution(E), Logging(L). Replaced ~120 lines of inline menu logic in neon_rush.py.",
+        "confidence": 99,
+        "source": "code audit 2026-03-01",
+        "verified": true,
+        "learned": "2026-03-01 09:55:04",
+        "updated": "2026-03-01 09:55:04",
+        "times_recalled": 0
+      },
+      {
+        "fact": "GameMode base class (shared/game_mode.py) now has shared weapon helpers: _create_bolts_for_player() handles multishot fan, _update_homing_rockets() spawns+steers+collides rockets, _spawn_orbit_orbs()/update_orbit_orbs() manages lemniscate orbs that absorb boss hazards. Groups: homing_rockets, orbit_orbs (alongside asteroids, all_sprites). get_rocket_targets() returns boss+asteroids (override per mode for obstacles). cleanup() kills all weapon groups.",
+        "confidence": 99,
+        "source": "code audit 2026-03-01",
+        "verified": true,
+        "learned": "2026-03-01 09:55:04",
+        "updated": "2026-03-01 09:55:04",
+        "times_recalled": 0
+      },
+      {
+        "fact": "Task system (core/tasks.py ~430 lines) fully implemented and wired 2026-03-01: 12 task types (coin_rush, score_target, distance_run, heat_kills, combo_chain, powerup_grab, speed_demon, survivor, near_miss, coin_combo, ramp_master[excitebike], drift_king[micro]). TaskManager assigns 2 per level, targets scale by mode_pace(0.7/1.0/1.3) * difficulty(0.7/1.0/1.4). Complete both \u2192 2s BOSS INCOMING delay \u2192 boss spawns. Coin combo bug fixed: uses _chain_count incremented per coin_collected, resets when combo multiplier drops. HUD: bottom-center progress bars with level label.",
+        "confidence": 0.99,
+        "source": "implemented 2026-03-01",
+        "verified": true,
+        "learned": "2026-03-01 17:48:46",
+        "updated": "2026-03-01 17:48:46",
+        "times_recalled": 0
+      },
+      {
+        "fact": "CLI flags added 2026-03-01: --windowed (sets disp.is_fullscreen=False, use_scaled=False, current_scale=1 before create_display), --ai (auto-starts 1P+AI skipping menu, injects ai_config={ai_players:[0], score_mult:1}). Combined with existing --god, --boss-rush, -m MODE, -t TIER. Launch: python3 neon_rush.py --windowed --ai --god --boss-rush",
+        "confidence": 0.99,
+        "source": "implemented 2026-03-01",
+        "verified": true,
+        "learned": "2026-03-01 17:48:46",
+        "updated": "2026-03-01 17:48:46",
+        "times_recalled": 0
+      },
+      {
+        "fact": "Bugs fixed 2026-03-01 session 2: (1) MicroMachinesBoss crash - added get_attack_hazards() default returning [] to Boss base class in boss_base.py. (2) Micro Machines road disconnect - chicane S-curves set center_x_end=center_x_start (not +amplitude) since sin(2pi) returns to origin. (3) Excitebike ramp damage - RampBarrage airborne check now calls boss.take_damage(ENVIRONMENTAL_DAMAGE, \"environmental\") + particles, was only doing screen shake. (4) MilestoneTracker moved from center to y=40, added tracer particles + neon sweep.",
+        "confidence": 0.99,
+        "source": "fixed 2026-03-01",
+        "verified": true,
+        "learned": "2026-03-01 17:48:46",
+        "updated": "2026-03-01 17:48:46",
+        "times_recalled": 0
+      },
+      {
+        "fact": "GAME_DESIGN.md created 2026-03-01: comprehensive design doc at project root covering boss rush format, level grid 1-1 through 3-3, difficulty philosophy, pacing targets (Desert ~25s, Excitebike ~35s, Micro ~45s), task system, powerup roster (9 types), boss contracts (3 phases, 3 damage methods), evolution tiers, controls, architecture overview.",
+        "confidence": 0.99,
+        "source": "created 2026-03-01",
+        "verified": true,
+        "learned": "2026-03-01 17:48:46",
+        "updated": "2026-03-01 17:48:46",
+        "times_recalled": 0
+      }
+    ],
+    "devialet_phantom_bredr_connection": [
+      {
+        "fact": "Devialet Phantom II 14:5A:FC:69:9B:F2 requires sync button hold to activate BR/EDR radio for A2DP. Without sync button, only BLE connects (no audio). Procedure: 1) remove device, 2) hold sync button, 3) bluetoothctl pair, 4) trust, 5) connect. ACL connection = success, LE connection = no audio. Set PreferredBearer=bredr in /var/lib/bluetooth/.../info after pairing.",
+        "confidence": 0.95,
+        "source": "direct_testing_2026-03-01",
+        "verified": true,
+        "learned": "2026-03-01 13:40:50",
+        "updated": "2026-03-01 13:40:50",
+        "times_recalled": 0
+      }
+    ],
+    "pipewire_quantum_sbc_bluetooth": [
+      {
+        "fact": "PipeWire quantum 512 causes broken pipe on SBC Bluetooth. Quantum 1024 is the safe floor for Devialet Phantom II SBC codec. Config at ~/.config/pipewire/pipewire.conf.d/10-bluetooth-performance.conf. DiamondForge uses pw-metadata to force quantum=1024 at startup and reset to 0 on shutdown.",
+        "confidence": 0.95,
+        "source": "direct_testing_2026-03-01",
+        "verified": true,
+        "learned": "2026-03-01 13:40:55",
+        "updated": "2026-03-01 13:40:55",
+        "times_recalled": 0
+      }
+    ],
+    "phantom_speaker_test_broken_pipe": [
+      {
+        "fact": "speaker-test with tiny period (-p 2) causes broken pipe on BT sinks. Use pw-play with proper WAV files for testing Bluetooth audio output. pw-play handles buffer negotiation correctly.",
+        "confidence": 0.9,
+        "source": "direct_testing_2026-03-01",
+        "verified": true,
+        "learned": "2026-03-01 13:40:55",
+        "updated": "2026-03-01 13:40:55",
+        "times_recalled": 0
+      }
+    ],
+    "phantom_full_audio_pipeline_working": [
+      {
+        "fact": "Full audio pipeline verified 2026-03-01: PipeWire 1.4.2 -> bluez_output.14_5A_FC_69_9B_F2.1 -> SBC A2DP -> Devialet Phantom II 98dB. Connection: ACL BR/EDR (NOT BLE). Quantum 1024. Volume 100%. Key: sync button MUST be held during initial pairing to activate BR/EDR radio. After pairing, set PreferredBearer=bredr in /var/lib/bluetooth/.../info. Phantom may need time after connect before audio routes to amplifier (internal source switching delay).",
+        "confidence": 0.95,
+        "source": "direct_testing_2026-03-01",
+        "verified": true,
+        "learned": "2026-03-01 13:48:17",
+        "updated": "2026-03-01 13:48:17",
+        "times_recalled": 0
+      }
+    ],
+    "devialet_phantom_ii_linux_full_pipeline": [
+      {
+        "fact": "COMPLETE Devialet Phantom II Bluetooth Audio Pipeline on Linux (Parrot Security 7.0):\n\nPROBLEM: Phantom II connects via BLE (Low Energy) by default. BLE provides GATT services but NOT A2DP audio. \nA2DP requires BR/EDR (Classic Bluetooth ACL connection). BlueZ defaults to BLE, so audio sink never appears in PipeWire.\n\nROOT CAUSE: Phantom II is dual-mode BT (BLE + BR/EDR). The BR/EDR radio is DORMANT by default.\nOnly activates when the physical SYNC BUTTON on the speaker is held down.\n\nFIX PROCEDURE:\n1. bluetoothctl remove 14:5A:FC:69:9B:F2 (remove old pairing)\n2. User holds SYNC button on Phantom (LED pulses white)\n3. bluetoothctl scan on (immediately)\n4. bluetoothctl pair 14:5A:FC:69:9B:F2 (within seconds of scan finding it)\n5. bluetoothctl trust 14:5A:FC:69:9B:F2\n6. bluetoothctl connect 14:5A:FC:69:9B:F2\n7. Verify: hcitool con shows ACL (not LE) connection type\n8. Verify: D-Bus shows sep1-4 endpoints + transport fd0\n9. Verify: pw-cli shows bluez_output.14_5A_FC_69_9B_F2.1\n\nPOST-PAIR LOCK (prevent BLE reconnection):\nEdit /var/lib/bluetooth/{adapter}/{device}/info:\n  Set PreferredBearer=bredr (was last-seen)\n  Verify both LinkKey (BR/EDR) and LongTermKey (BLE) sections exist\n\nPIPEWIRE CONFIG:\n~/.config/pipewire/pipewire.conf.d/10-bluetooth-performance.conf:\n  default.clock.quantum = 1024 (safe floor for SBC codec)\n  default.clock.min-quantum = 256\n  default.clock.max-quantum = 8192\n\nCODEC: SBC joint stereo, 48kHz, bitpool 88\nPLAYBACK: Use pw-play (NOT speaker-test, which causes broken pipe with small periods)\nVOLUME: wpctl set-volume @DEFAULT_AUDIO_SINK@ 1.0\n\nWARNING: Restarting WirePlumber drops the BT connection and reconnection defaults to BLE.\nWARNING: btmon requires sudo/root to capture HCI packets (0 packets without privileges is access issue, not data issue).\n",
+        "confidence": 0.98,
+        "source": "hands-on debugging session 2026-03-01",
+        "verified": true,
+        "learned": "2026-03-01 14:41:18",
+        "updated": "2026-03-01 14:41:18",
+        "times_recalled": 0,
+        "scroll": "devialet-phantom-ii-linux-full-pipeline-devialet-phantom-ii-linux-bt-a2dp-comple"
+      }
+    ],
+    "wireplumber_phantom_ii_configs": [
+      {
+        "fact": "WirePlumber configs for Devialet Phantom II:\n\n50-bluez-config.conf: SBC-only codec, no hw-volume, no suspend timeout\n51-phantom-fixes.conf: Phantom-specific WirePlumber fixes  \n52-diamondforge-priority.conf: DiamondForge priority 1250, Firefox demoted to 800\n\nLocation: ~/.config/wireplumber/wireplumber.conf.d/\nCRITICAL: Back these up before any nuke-and-pave. Restoring from .bak after WP restart works.\nDO NOT restart WirePlumber while Phantom is connected - it drops the BT connection.\n",
+        "confidence": 0.95,
+        "source": "debugging session 2026-03-01",
+        "verified": true,
+        "learned": "2026-03-01 14:41:24",
+        "updated": "2026-03-01 14:41:24",
+        "times_recalled": 0
+      }
+    ],
+    "bluetooth_ble_vs_bredr_audio": [
+      {
+        "fact": "BLE vs BR/EDR for Bluetooth Audio:\n- BLE (Low Energy): GATT services only. NO audio streaming capability. Used for control/metadata.\n- BR/EDR (Classic): Required for A2DP audio streaming. Uses ACL connection type.\n- Dual-mode devices may connect via BLE first, leaving A2DP unavailable.\n- hcitool con shows connection type: \"< LE\" = BLE only, \"< ACL\" = BR/EDR (good for audio)\n- ConnectProfile for A2DP returns br-connection-page-timeout when device BR/EDR radio is dormant.\n- D-Bus path org.bluez /dev_XX_XX shows sep/endpoint nodes ONLY on BR/EDR connection.\n- PreferredBearer in /var/lib/bluetooth/.../info controls reconnection preference.\n",
+        "confidence": 0.97,
+        "source": "debugging session 2026-03-01",
+        "verified": true,
+        "learned": "2026-03-01 14:41:24",
+        "updated": "2026-03-01 14:41:24",
+        "times_recalled": 0
+      }
+    ]
+  },
+  "meta": {
+    "created": "2026-02-09 16:19:57",
+    "entries": 73,
+    "xp": 5748,
+    "level": 57,
+    "xp_log": [
+      {
+        "event": "level_up",
+        "from": 0,
+        "to": 1,
+        "title": "Awakened",
+        "timestamp": "2026-02-09 16:19:57"
+      },
+      {
+        "event": "level_up",
+        "from": 1,
+        "to": 2,
+        "title": "Observer",
+        "timestamp": "2026-02-09 16:38:02"
+      },
+      {
+        "event": "level_up",
+        "from": 2,
+        "to": 3,
+        "title": "Student",
+        "timestamp": "2026-02-09 16:38:02"
+      },
+      {
+        "event": "level_up",
+        "from": 3,
+        "to": 4,
+        "title": "Student",
+        "timestamp": "2026-02-09 16:38:02"
+      },
+      {
+        "event": "level_up",
+        "from": 4,
+        "to": 5,
+        "title": "Apprentice",
+        "timestamp": "2026-02-09 16:38:02"
+      },
+      {
+        "event": "level_up",
+        "from": 5,
+        "to": 6,
+        "title": "Apprentice",
+        "timestamp": "2026-02-09 16:38:02"
+      },
+      {
+        "event": "level_up",
+        "from": 6,
+        "to": 7,
+        "title": "Apprentice",
+        "timestamp": "2026-02-09 21:52:44"
+      },
+      {
+        "event": "level_up",
+        "from": 7,
+        "to": 8,
+        "title": "Practitioner",
+        "timestamp": "2026-02-09 21:53:50"
+      },
+      {
+        "event": "level_up",
+        "from": 8,
+        "to": 9,
+        "title": "Practitioner",
+        "timestamp": "2026-02-09 21:53:50"
+      },
+      {
+        "event": "level_up",
+        "from": 9,
+        "to": 10,
+        "title": "Specialist",
+        "timestamp": "2026-02-09 21:53:50"
+      },
+      {
+        "event": "level_up",
+        "from": 10,
+        "to": 11,
+        "title": "Specialist",
+        "timestamp": "2026-02-13 04:36:31"
+      },
+      {
+        "event": "level_up",
+        "from": 11,
+        "to": 12,
+        "title": "Specialist",
+        "timestamp": "2026-02-13 08:06:09"
+      },
+      {
+        "event": "level_up",
+        "from": 12,
+        "to": 13,
+        "title": "Specialist",
+        "timestamp": "2026-02-13 08:06:09"
+      },
+      {
+        "event": "level_up",
+        "from": 13,
+        "to": 14,
+        "title": "Specialist",
+        "timestamp": "2026-02-13 08:06:09"
+      },
+      {
+        "event": "level_up",
+        "from": 14,
+        "to": 15,
+        "title": "Expert",
+        "timestamp": "2026-02-13 08:07:35"
+      },
+      {
+        "event": "level_up",
+        "from": 15,
+        "to": 16,
+        "title": "Expert",
+        "timestamp": "2026-02-17 13:25:26"
+      },
+      {
+        "event": "level_up",
+        "from": 16,
+        "to": 17,
+        "title": "Expert",
+        "timestamp": "2026-02-17 13:25:26"
+      },
+      {
+        "event": "level_up",
+        "from": 17,
+        "to": 18,
+        "title": "Expert",
+        "timestamp": "2026-02-17 13:25:33"
+      },
+      {
+        "event": "level_up",
+        "from": 18,
+        "to": 19,
+        "title": "Expert",
+        "timestamp": "2026-02-18 15:28:49"
+      },
+      {
+        "event": "level_up",
+        "from": 19,
+        "to": 20,
+        "title": "Master",
+        "timestamp": "2026-02-20 16:49:25"
+      },
+      {
+        "event": "level_up",
+        "from": 20,
+        "to": 21,
+        "title": "Master",
+        "timestamp": "2026-02-20 16:49:25"
+      },
+      {
+        "event": "level_up",
+        "from": 21,
+        "to": 22,
+        "title": "Master",
+        "timestamp": "2026-02-20 16:49:28"
+      },
+      {
+        "event": "level_up",
+        "from": 22,
+        "to": 23,
+        "title": "Master",
+        "timestamp": "2026-02-20 16:49:28"
+      },
+      {
+        "event": "level_up",
+        "from": 23,
+        "to": 24,
+        "title": "Master",
+        "timestamp": "2026-02-20 16:49:28"
+      },
+      {
+        "event": "level_up",
+        "from": 24,
+        "to": 25,
+        "title": "Master",
+        "timestamp": "2026-02-20 16:49:28"
+      },
+      {
+        "event": "level_up",
+        "from": 25,
+        "to": 26,
+        "title": "Master",
+        "timestamp": "2026-02-20 16:50:32"
+      },
+      {
+        "event": "level_up",
+        "from": 26,
+        "to": 27,
+        "title": "Master",
+        "timestamp": "2026-02-20 16:50:32"
+      },
+      {
+        "event": "level_up",
+        "from": 27,
+        "to": 28,
+        "title": "Master",
+        "timestamp": "2026-02-20 16:53:03"
+      },
+      {
+        "event": "level_up",
+        "from": 28,
+        "to": 29,
+        "title": "Master",
+        "timestamp": "2026-02-20 16:53:03"
+      },
+      {
+        "event": "level_up",
+        "from": 29,
+        "to": 30,
+        "title": "Sage",
+        "timestamp": "2026-02-20 18:07:01"
+      },
+      {
+        "event": "level_up",
+        "from": 30,
+        "to": 31,
+        "title": "Sage",
+        "timestamp": "2026-02-20 18:32:39"
+      },
+      {
+        "event": "level_up",
+        "from": 31,
+        "to": 32,
+        "title": "Sage",
+        "timestamp": "2026-02-21 14:49:30"
+      },
+      {
+        "event": "level_up",
+        "from": 32,
+        "to": 33,
+        "title": "Sage",
+        "timestamp": "2026-02-27 02:51:17"
+      },
+      {
+        "event": "level_up",
+        "from": 33,
+        "to": 34,
+        "title": "Sage",
+        "timestamp": "2026-02-27 03:33:30"
+      },
+      {
+        "event": "level_up",
+        "from": 34,
+        "to": 35,
+        "title": "Sage",
+        "timestamp": "2026-02-27 04:16:53"
+      },
+      {
+        "event": "level_up",
+        "from": 35,
+        "to": 36,
+        "title": "Sage",
+        "timestamp": "2026-02-27 04:16:53"
+      },
+      {
+        "event": "level_up",
+        "from": 36,
+        "to": 37,
+        "title": "Sage",
+        "timestamp": "2026-02-27 04:16:54"
+      },
+      {
+        "event": "level_up",
+        "from": 37,
+        "to": 38,
+        "title": "Sage",
+        "timestamp": "2026-02-27 04:16:54"
+      },
+      {
+        "event": "level_up",
+        "from": 38,
+        "to": 39,
+        "title": "Sage",
+        "timestamp": "2026-02-27 04:16:54"
+      },
+      {
+        "event": "level_up",
+        "from": 39,
+        "to": 40,
+        "title": "Sage",
+        "timestamp": "2026-02-27 04:16:55"
+      },
+      {
+        "event": "level_up",
+        "from": 40,
+        "to": 41,
+        "title": "Sage",
+        "timestamp": "2026-02-27 04:16:55"
+      },
+      {
+        "event": "level_up",
+        "from": 41,
+        "to": 42,
+        "title": "Sage",
+        "timestamp": "2026-02-27 04:16:55"
+      },
+      {
+        "event": "level_up",
+        "from": 42,
+        "to": 43,
+        "title": "Sage",
+        "timestamp": "2026-02-27 04:16:56"
+      },
+      {
+        "event": "level_up",
+        "from": 43,
+        "to": 44,
+        "title": "Sage",
+        "timestamp": "2026-02-27 04:16:56"
+      },
+      {
+        "event": "level_up",
+        "from": 44,
+        "to": 45,
+        "title": "Sage",
+        "timestamp": "2026-02-27 04:16:57"
+      },
+      {
+        "event": "level_up",
+        "from": 45,
+        "to": 46,
+        "title": "Sage",
+        "timestamp": "2026-02-27 04:16:57"
+      },
+      {
+        "event": "level_up",
+        "from": 46,
+        "to": 47,
+        "title": "Sage",
+        "timestamp": "2026-02-27 04:16:57"
+      },
+      {
+        "event": "level_up",
+        "from": 47,
+        "to": 48,
+        "title": "Sage",
+        "timestamp": "2026-02-27 10:57:02"
+      },
+      {
+        "event": "level_up",
+        "from": 48,
+        "to": 49,
+        "title": "Sage",
+        "timestamp": "2026-02-27 16:28:02"
+      },
+      {
+        "event": "level_up",
+        "from": 49,
+        "to": 50,
+        "title": "Oracle",
+        "timestamp": "2026-02-27 22:16:27"
+      },
+      {
+        "event": "level_up",
+        "from": 50,
+        "to": 51,
+        "title": "Oracle",
+        "timestamp": "2026-02-28 21:04:03"
+      },
+      {
+        "event": "level_up",
+        "from": 51,
+        "to": 52,
+        "title": "Oracle",
+        "timestamp": "2026-02-28 21:06:45"
+      },
+      {
+        "event": "level_up",
+        "from": 52,
+        "to": 53,
+        "title": "Oracle",
+        "timestamp": "2026-02-28 21:06:45"
+      },
+      {
+        "event": "level_up",
+        "from": 53,
+        "to": 54,
+        "title": "Oracle",
+        "timestamp": "2026-03-01 09:50:59"
+      },
+      {
+        "event": "level_up",
+        "from": 54,
+        "to": 55,
+        "title": "Oracle",
+        "timestamp": "2026-03-01 12:53:38"
+      },
+      {
+        "event": "level_up",
+        "from": 55,
+        "to": 56,
+        "title": "Oracle",
+        "timestamp": "2026-03-01 14:41:18"
+      },
+      {
+        "event": "level_up",
+        "from": 56,
+        "to": 57,
+        "title": "Oracle",
+        "timestamp": "2026-03-01 17:48:46"
+      }
+    ],
+    "max_recall": 8,
+    "base_knowledge": true,
+    "base_knowledge_note": "Pre-loaded with curated knowledge. These facts are your foundation \u2014 build on them.",
+    "last_saved": "2026-03-01 23:52:04",
+    "total_facts": -17
+  },
+  "agents": {
+    "roster": [
+      {
+        "id": "A-0001",
+        "name": "PrismHawk",
+        "role": "artificer",
+        "task": "Create a magical quest scroll \u2014 a living terminal artifact that conjures creative missions",
+        "status": "done",
+        "checkin": "2026-02-09 21:07:06",
+        "checkout": "2026-02-09 21:09:29",
+        "result": "Created quest_scroll.py \u2014 magical quest generator with 10 quest templates, animated unfurl, brain-state-driven quest selection, tier system (common/rare/epic/legendary), rune animations, and ember particle effects",
+        "returning": false,
+        "duration": "2m23s"
+      },
+      {
+        "id": "A-0002",
+        "name": "ObsidianCondor",
+        "role": "tester",
+        "task": "streak bug verification",
+        "status": "active",
+        "checkin": "2026-02-17 13:41:01",
+        "checkout": null,
+        "result": null,
+        "returning": false
+      },
+      {
+        "id": "A-0003",
+        "name": "PixelPanther",
+        "role": "tester",
+        "task": "streak bug verification",
+        "status": "done",
+        "checkin": "2026-02-17 13:41:09",
+        "checkout": "2026-02-17 13:41:18",
+        "result": "Streak bug fix confirmed \u2014 resets on non-diamond",
+        "returning": false,
+        "duration": "9s"
+      },
+      {
+        "id": "A-0004",
+        "name": "CipherPhoenix",
+        "role": "architect",
+        "task": "CaseStar v1.1 architecture bulk learn",
+        "status": "active",
+        "checkin": "2026-02-20 16:48:58",
+        "checkout": null,
+        "result": null,
+        "returning": false
+      },
+      {
+        "id": "A-0005",
+        "name": "ObsidianDjinn",
+        "role": "architect",
+        "task": "CaseStar v1.1 architecture bulk learn",
+        "status": "active",
+        "checkin": "2026-02-20 16:49:02",
+        "checkout": null,
+        "result": null,
+        "returning": false
+      },
+      {
+        "id": "A-0006",
+        "name": "ApexViper",
+        "role": "auditor",
+        "task": "CaseStar v1.1 pain points + fix strategies",
+        "status": "active",
+        "checkin": "2026-02-20 16:49:03",
+        "checkout": null,
+        "result": null,
+        "returning": false
+      },
+      {
+        "id": "A-0007",
+        "name": "QuantumGecko",
+        "role": "auditor",
+        "task": "CaseStar v1.1 pain points + fix strategies - retry",
+        "status": "completed",
+        "checkin": "2026-02-20 16:49:08",
+        "checkout": "2026-02-20 16:49:25",
+        "result": "Learned 10 CaseStar pain points with fix strategies",
+        "returning": false,
+        "duration": "17s"
+      },
+      {
+        "id": "A-0008",
+        "name": "NeonGecko",
+        "role": "researcher",
+        "task": "Tech topic research for CaseStar stack",
+        "status": "active",
+        "checkin": "2026-02-20 16:49:20",
+        "checkout": null,
+        "result": null,
+        "returning": false
+      },
+      {
+        "id": "A-0009",
+        "name": "EmberScorpion",
+        "role": "researcher",
+        "task": "Tech topic research for CaseStar stack - batch 2",
+        "status": "completed",
+        "checkin": "2026-02-20 16:49:25",
+        "checkout": "2026-02-20 16:53:03",
+        "result": "Researched and learned 14 facts across 9 tech topics: hnsw(2), bm25(2), rrf(1), mmr(1), faiss(2), vector-search(2), hybrid-search(2), tesseract-ocr(1), nomic-embed-text(1)",
+        "returning": false,
+        "duration": "3m38s"
+      },
+      {
+        "id": "A-0010",
+        "name": "PrismJackal",
+        "role": "architect",
+        "task": "CaseStar v1.1 architecture bulk learn",
+        "status": "completed",
+        "checkin": "2026-02-20 16:49:28",
+        "checkout": "2026-02-20 16:49:29",
+        "result": "Learned 18 architecture facts for CaseStar v1.1",
+        "returning": false,
+        "duration": "1s"
+      },
+      {
+        "id": "A-0011",
+        "name": "GhostOtter",
+        "role": "expander",
+        "task": "Expand existing CaseStar facts to v1.1 + link scroll",
+        "status": "active",
+        "checkin": "2026-02-20 16:50:10",
+        "checkout": null,
+        "result": null,
+        "returning": false
+      },
+      {
+        "id": "A-0012",
+        "name": "NovaGecko",
+        "role": "expander",
+        "task": "Expand existing CaseStar facts to v1.1 + link scroll",
+        "status": "completed",
+        "checkin": "2026-02-20 16:50:15",
+        "checkout": "2026-02-20 16:50:32",
+        "result": "Expanded 8 facts, linked deep scroll for CaseStar v1.1",
+        "returning": false,
+        "duration": "17s"
+      }
+    ],
+    "next_id": 13,
+    "stats": {
+      "total_spawned": 12,
+      "total_completed": 6,
+      "total_failed": 0,
+      "total_killed": 0,
+      "peak_concurrent": 8,
+      "total_time_secs": 405
+    },
+    "legends": {
+      "PrismHawk": {
+        "shards": 0,
+        "missions": 1,
+        "times_called": 0,
+        "roles": [
+          "artificer"
+        ],
+        "first_seen": "2026-02-09 21:07:06",
+        "best_result": "Created quest_scroll.py \u2014 magical quest generator with 10 quest templates, animated unfurl, brain-st"
+      },
+      "PixelPanther": {
+        "shards": 0,
+        "missions": 1,
+        "times_called": 0,
+        "roles": [
+          "tester"
+        ],
+        "first_seen": "2026-02-17 13:41:09",
+        "best_result": "Streak bug fix confirmed \u2014 resets on non-diamond"
+      }
+    }
+  },
+  "prompts": {
+    "network_recon": [
+      {
+        "name": "Full Network Enumeration",
+        "prompt": "Perform comprehensive network reconnaissance on [TARGET/RANGE]. Phase 1: Host discovery (ping sweep, ARP scan). Phase 2: Port scan top 1000 then full 65535 on live hosts. Phase 3: Service version detection + OS fingerprint on open ports. Phase 4: Run relevant NSE scripts per service. Present results as a structured table: IP | Open Ports | Services | OS | Notable Findings. Flag anything unusual. Save scan results to ~/recon/[target]-[date]/. Suggest attack surface priorities ranked by risk.",
+        "reason": "Comprehensive 4-phase methodology. Forces structured output, saves results, and prioritizes findings. Covers the full recon lifecycle in one prompt.",
+        "score": 92,
+        "category": "network_recon",
+        "added": "2026-02-09 13:53:22",
+        "times_used": 0,
+        "last_used": null,
+        "results_rating": []
+      },
+      {
+        "name": "Quick Tactical Scan",
+        "prompt": "Fast recon on [TARGET]. Nmap top 100 ports with service detection (-sV -sC --top-ports 100 -T4). Parse output into a clean table. For each service found, list: known default creds, common CVEs for that version, and suggested next tool to use. Keep it tight \u2014 I need actionable intel in under 2 minutes.",
+        "reason": "Speed-optimized. Gets actionable intel fast with CVE and default cred awareness built in. Perfect for time-boxed engagements.",
+        "score": 87,
+        "category": "network_recon",
+        "added": "2026-02-09 13:53:22",
+        "times_used": 0,
+        "last_used": null,
+        "results_rating": []
+      }
+    ],
+    "web_security": [
+      {
+        "name": "Full Web App Assessment",
+        "prompt": "Assess the web application at [URL]. Workflow: 1) Tech stack fingerprint. 2) Directory bruteforce with ffuf/gobuster. 3) Check for: SQLi entry points, XSS reflection, IDOR patterns, auth bypass, directory traversal, exposed admin panels, sensitive files (.git, .env, robots.txt). 4) Check HTTP security headers (CORS, CSP, X-Frame, HSTS). Present findings severity-ranked: Finding | Severity | Evidence | Remediation.",
+        "reason": "Full OWASP coverage in a single prompt. Forces evidence-based findings with remediation. The severity ranking makes triage immediate.",
+        "score": 90,
+        "category": "web_security",
+        "added": "2026-02-09 13:53:22",
+        "times_used": 0,
+        "last_used": null,
+        "results_rating": []
+      },
+      {
+        "name": "Targeted Endpoint Test",
+        "prompt": "Test [URL/ENDPOINT] for [VULN_TYPE]. Show exact payloads, explain why each works against common filters, execute them, capture responses, determine vulnerability. If vulnerable: demonstrate impact. If not: explain defenses and suggest bypasses. Document everything reproducibly.",
+        "reason": "Surgical precision testing. The 'explain why' and 'suggest bypasses' make it a learning tool AND a testing tool simultaneously.",
+        "score": 85,
+        "category": "web_security",
+        "added": "2026-02-09 13:53:22",
+        "times_used": 0,
+        "last_used": null,
+        "results_rating": []
+      }
+    ],
+    "python_dev": [
+      {
+        "name": "Build a Pro Tool",
+        "prompt": "Build a Python tool that [DESCRIPTION]. Requirements: argparse CLI, proper error handling, colored terminal output (colorama/rich), modular functions, --verbose flag, --output flag, banner header. Make it professional \u2014 this goes in my toolkit. Test before delivering. If network-touching, add timeout and rate limiting.",
+        "reason": "Forces production-quality code every time. The 'goes in my toolkit' framing ensures it's reusable, not throwaway. Built-in quality gates.",
+        "score": 88,
+        "category": "python_dev",
+        "added": "2026-02-09 13:53:22",
+        "times_used": 0,
+        "last_used": null,
+        "results_rating": []
+      },
+      {
+        "name": "Automate a Workflow",
+        "prompt": "Automate [WORKFLOW]. Python. Chain steps logically. Progress indicators (tqdm/rich). Handle failures gracefully \u2014 log and continue. Structured output (JSON/CSV). Summary: total processed, successes, failures, elapsed time. Make it idempotent \u2014 safe to re-run.",
+        "reason": "The idempotent requirement is key \u2014 prevents double-processing disasters. Progress indicators keep long jobs visible. Failure handling means it doesn't die on edge cases.",
+        "score": 84,
+        "category": "python_dev",
+        "added": "2026-02-09 13:53:22",
+        "times_used": 0,
+        "last_used": null,
+        "results_rating": []
+      }
+    ],
+    "osint": [
+      {
+        "name": "Full OSINT Profile",
+        "prompt": "Gather OSINT on [TARGET]. Passive only. Check: WHOIS, DNS (A/MX/TXT/NS/CNAME), subdomains, SSL cert transparency, web archive, tech stack, social media, email patterns, exposed docs/metadata, GitHub/GitLab, paste sites. Compile intelligence report. Rate confidence (high/medium/low) per finding. Suggest deeper investigation targets.",
+        "reason": "Exhaustive passive checklist ensures nothing is missed. Confidence ratings prevent acting on noise. The 'suggest deeper' at the end chains into the next action naturally.",
+        "score": 91,
+        "category": "osint",
+        "added": "2026-02-09 13:53:22",
+        "times_used": 0,
+        "last_used": null,
+        "results_rating": []
+      },
+      {
+        "name": "Quick Footprint",
+        "prompt": "Fast passive footprint of [TARGET]. DNS + WHOIS + subdomain enum + tech stack + exposed services. 5-minute time box. Bullet points. Flag top 3 most interesting findings first. Suggest single best next action.",
+        "reason": "Time-boxed to prevent rabbit holes. The 'top 3 first' ensures the most valuable intel is front and center even if you stop reading.",
+        "score": 83,
+        "category": "osint",
+        "added": "2026-02-09 13:53:22",
+        "times_used": 0,
+        "last_used": null,
+        "results_rating": []
+      }
+    ],
+    "exploit_dev": [
+      {
+        "name": "CVE Research & PoC",
+        "prompt": "Research [CVE/VULNERABILITY]. Find: affected versions, root cause, attack vector, prerequisites, existing PoCs. Review public PoC code for safety, adapt for our environment. If no PoC, analyze details and draft one. Test controlled. Document: vulnerable config, exploitation steps, detection indicators, patch/mitigation.",
+        "reason": "Full CVE lifecycle from research to PoC to documentation. The 'detection indicators' make it useful for both offense and defense.",
+        "score": 89,
+        "category": "exploit_dev",
+        "added": "2026-02-09 13:53:22",
+        "times_used": 0,
+        "last_used": null,
+        "results_rating": []
+      },
+      {
+        "name": "Security Code Review",
+        "prompt": "Analyze [BINARY/SOURCE] for security issues. Binaries: checksec, identify functions, trace input handling, memory corruption. Source: injection points, auth flaws, logic bugs, race conditions, crypto misuse. Rank by exploitability. Top finding: outline exploitation path.",
+        "reason": "Dual binary/source methodology. The 'rank by exploitability' prevents wasting time on theoretical issues. Exploitation path proves impact.",
+        "score": 86,
+        "category": "exploit_dev",
+        "added": "2026-02-09 13:53:22",
+        "times_used": 0,
+        "last_used": null,
+        "results_rating": []
+      }
+    ],
+    "reporting": [
+      {
+        "name": "Full Assessment Report",
+        "prompt": "Compile findings into professional report. Structure: Executive Summary (3 sentences), Scope, Methodology, Findings (severity-ranked table with CVSS-style rating), Detailed Findings (description, evidence, impact, remediation each), Conclusion & Recommendations. Markdown. Include command outputs as evidence. Client-ready.",
+        "reason": "Client-ready output structure. The 3-sentence exec summary forces clarity. CVSS-style rating standardizes severity. Evidence requirement prevents fluff.",
+        "score": 88,
+        "category": "reporting",
+        "added": "2026-02-09 13:53:22",
+        "times_used": 0,
+        "last_used": null,
+        "results_rating": []
+      },
+      {
+        "name": "Tactical Briefing",
+        "prompt": "Summarize [RESULTS] as tactical briefing. BLUF (1-2 sentences), Key Findings (numbered), Risk Assessment (critical/high/medium/low counts), Recommended Actions (prioritized), Open Questions. One screen of terminal output. No fluff.",
+        "reason": "BLUF format is military-grade communication. The 'one screen' constraint forces brutal prioritization. Open Questions keeps transparency.",
+        "score": 85,
+        "category": "reporting",
+        "added": "2026-02-09 13:53:22",
+        "times_used": 0,
+        "last_used": null,
+        "results_rating": []
+      }
+    ],
+    "maintenance": [
+      {
+        "name": "## Dragonfly Stack Upgrade Check Run...",
+        "prompt": "## Dragonfly Stack Upgrade Check\nRun at session start or when user asks. Check all 13 tools:\n\n**Binary tools** (GitHub releases \u2192 ~/.local/bin):\nrg (BurntSushi/ripgrep), gh (cli/cli), fzf (junegunn/fzf), bat (sharkdp/bat),\nfd (sharkdp/fd), jq (jqlang/jq), yq (mikefarah/yq), eza (eza-community/eza),\nzoxide (ajeetdsouza/zoxide), atuin (atuinsh/atuin)\n\n**Pip tools** (pip3 install --upgrade --break-system-packages):\nhttpie, thefuck, tldr\n\n**Quick version check pattern:**\n- Installed: run `tool --version` (eza: line 2)\n- Latest: `curl -sI https://github.com/OWNER/REPO/releases/latest | grep -i ^location | awk -F/ '{print $NF}'`\n- Pip: `pip3 index versions PACKAGE | head -1`\n\n**Upgrade pattern (binaries):**\ncurl -sL RELEASE_URL -o /tmp/tool.tar.gz \u2192 extract \u2192 cp to ~/.local/bin/\n\nPresent results as table: Tool | Installed | Latest | Status\nOnly upgrade what user approves.",
+        "reason": "Reusable workflow for checking and upgrading all Dragonfly CLI tools \u2014 avoids re-discovering repos and version commands each session",
+        "score": 74,
+        "category": "maintenance",
+        "added": "2026-02-27 02:38:04",
+        "times_used": 0,
+        "last_used": null,
+        "results_rating": []
+      }
+    ]
+  },
+  "soft": [],
+  "scouts": [
+    {
+      "id": 1,
+      "topic": "metasploit",
+      "context": "Deep intel on Metasploit Framework \u2014 advanced module types, msfvenom payload generation patterns, post-exploitation modules, pivoting techniques, session management. Focus on patterns not in basic tutorials.",
+      "priority": "high",
+      "dispatched": "2026-02-09 21:50:27",
+      "status": "absorbed",
+      "findings": [
+        {
+          "fact": "Staged payloads (windows/meterpreter/reverse_tcp with slash) send a small 73KB stager that establishes TCP, reads 4 bytes for payload size, allocates RWX memory, and downloads the full stage. Stageless payloads (windows/meterpreter_reverse_tcp with underscore) bundle everything in ~245KB. Staged evades more AV since few vendors beacon for Stage 2.",
+          "topic": "metasploit",
+          "confidence": 96,
+          "source": "https://buffered.io/posts/staged-vs-stageless-handlers/"
+        },
+        {
+          "fact": "post/multi/manage/autoroute 'autoadd' CMD auto-discovers valid subnets from session routing table and interfaces. 'default' CMD adds catch-all route forcing all unspecified TCP/IP through the pivot. Netmask accepts both dotted-decimal (255.255.255.0) and CIDR (/24) notation.",
+          "topic": "metasploit",
+          "confidence": 95,
+          "source": "https://github.com/rapid7/metasploit-framework/blob/master/documentation/modules/post/multi/manage/autoroute.md"
+        },
+        {
+          "fact": "'sessions -u' upgrade is limited to default reverse Meterpreter and CANNOT work through pivots. For pivoting, use full post/multi/manage/shell_to_meterpreter with manually set LHOST pointing to pivot machine IP, as session object shows 'Local Pipe' instead of correct address.",
+          "topic": "metasploit",
+          "confidence": 94,
+          "source": "https://github.com/rapid7/metasploit-framework/blob/master/documentation/modules/post/multi/manage/shell_to_meterpreter.md"
+        },
+        {
+          "fact": "makerc command records all msfconsole commands into .rc resource script, eliminating typing errors. Resource scripts support ERB (Embedded Ruby) for calling APIs, interacting with DB objects, and programmatic command generation. Run with 'resource script.rc' or 'msfconsole -r script.rc'.",
+          "topic": "metasploit",
+          "confidence": 97,
+          "source": "https://docs.rapid7.com/metasploit/resource-scripts/"
+        },
+        {
+          "fact": "Workspaces isolate data per engagement: 'workspace -a name' creates, 'workspace name' switches. Each workspace scopes all DB queries (hosts, services, vulns). Combined with 'db_export -f xml backup.xml' for pre-reinit backup. Route add accepts session IDs as gateway: 'route add 10.0.0.0 255.255.0.0 <session_id>'.",
+          "topic": "metasploit",
+          "confidence": 95,
+          "source": "https://docs.rapid7.com/metasploit/managing-workspaces/"
+        }
+      ],
+      "quality": "chef_kiss",
+      "returned": "2026-02-09 21:53:42",
+      "absorbed": "2026-02-09 21:53:50",
+      "absorbed_count": 5
+    },
+    {
+      "id": 2,
+      "topic": "network",
+      "context": "Network reconnaissance techniques beyond basic nmap \u2014 passive OS fingerprinting, ARP tricks, IPv6 discovery, DNS zone transfers, SNMP enumeration, service-specific probing patterns. Practical field knowledge.",
+      "priority": "normal",
+      "dispatched": "2026-02-09 21:50:27",
+      "status": "absorbed",
+      "findings": [
+        {
+          "fact": "p0f performs passive OS fingerprinting by analyzing TCP/IP stack characteristics (window size, initial TTL, TCP options sequence) from SYN/SYN+ACK without sending probes. Common TTL defaults: 64 (Linux), 128 (Windows), 255 (Cisco/network gear). TCP window size alone gives 70-80% OS detection accuracy.",
+          "topic": "network",
+          "confidence": 95,
+          "source": "https://jonathansblog.co.uk/os-detection-techniques"
+        },
+        {
+          "fact": "IPv6 host discovery via multicast: ping6 -I <iface> ff02::1 (all-nodes) and ff02::2 (all-routers) on link-local scope. Responses populate neighbor cache (IPv6 ARP equivalent). View with 'ip -6 neigh'. Bypasses firewalls that only filter IPv4 discovery.",
+          "topic": "network",
+          "confidence": 93,
+          "source": "https://github.com/ivanversluis/pentest-hacktricks/blob/master/pentesting/pentesting-network/pentesting-ipv6.md"
+        },
+        {
+          "fact": "RFC 9276 (2022) recommends NSEC3 iterations=0 and empty salt \u2014 additional iterations provide minimal security against zone enumeration since GPUs crack most NSEC3 hashes. Modern attackers use rainbow tables to enumerate NSEC3-protected zones despite hashing.",
+          "topic": "network",
+          "confidence": 96,
+          "source": "https://datatracker.ietf.org/doc/rfc9276/"
+        },
+        {
+          "fact": "SNMPv2c introduced 64-bit counters (ifHCInOctets OID 1.3.6.1.2.1.31.1.1.1.6) to prevent wrap on high-speed interfaces. At 1Gbps, 32-bit counters wrap in 34 seconds making SNMPv1 useless for gigabit+ monitoring. Always use v2c/v3 for accurate traffic data.",
+          "topic": "network",
+          "confidence": 97,
+          "source": "https://www.cisco.com/c/en/us/support/docs/ip/simple-network-management-protocol-snmp/26007-faq-snmpcounter.html"
+        },
+        {
+          "fact": "SMB null session enumeration (rpcclient -U '' -N <target>) extracts users, shares, groups, SIDs without auth. Default on Win2000/NT, disabled since XP SP2/Server 2003. Still common on legacy/misconfigured Samba. Key commands: enumdomusers, querydispinfo, netshareenumall.",
+          "topic": "network",
+          "confidence": 94,
+          "source": "https://www.hackingarticles.in/a-little-guide-to-smb-enumeration/"
+        }
+      ],
+      "quality": "chef_kiss",
+      "returned": "2026-02-09 21:53:42",
+      "absorbed": "2026-02-09 21:53:50",
+      "absorbed_count": 5
+    },
+    {
+      "id": 3,
+      "topic": "ffuf",
+      "context": "Advanced ffuf techniques \u2014 filter chains (-fc/-fs/-fw/-fl), recursive fuzzing, multi-wordlist mode, rate limiting evasion, custom header injection, POST data fuzzing, virtual host discovery, calibration mode. Real operator patterns.",
+      "priority": "high",
+      "dispatched": "2026-02-09 21:50:27",
+      "status": "absorbed",
+      "findings": [
+        {
+          "fact": "Autocalibrate mode (-ac) auto-filters noise; -mc all -ac matches all codes while filtering",
+          "topic": "ffuf",
+          "confidence": 96,
+          "source": "https://github.com/ffuf/ffuf"
+        },
+        {
+          "fact": "Multi-wordlist: -w list:KEYWORD, modes: clusterbomb (default), pitchfork, sniper",
+          "topic": "ffuf",
+          "confidence": 97,
+          "source": "https://github.com/ffuf/ffuf/wiki"
+        },
+        {
+          "fact": "POST fuzzing: -X POST -d with FUZZ in body, -H for headers, supports JSON",
+          "topic": "ffuf",
+          "confidence": 95,
+          "source": "https://github.com/ffuf/ffuf"
+        },
+        {
+          "fact": "Vhost discovery: fuzz Host header -H 'Host: FUZZ.target' -fs to filter default",
+          "topic": "ffuf",
+          "confidence": 98,
+          "source": "https://www.thehacker.recipes/web/recon/virtual-host-fuzzing"
+        },
+        {
+          "fact": "Recursion: -recursion -recursion-depth N, strategies: default (30x) vs greedy (all)",
+          "topic": "ffuf",
+          "confidence": 96,
+          "source": "https://manpages.debian.org/testing/ffuf/ffuf.1.en.html"
+        }
+      ],
+      "quality": "chef_kiss",
+      "returned": "2026-02-09 21:53:42",
+      "absorbed": "2026-02-09 21:53:50",
+      "absorbed_count": 5
+    }
+  ],
+  "council": {
+    "seats": {},
+    "shinies": {},
+    "dark_masks": {}
+  },
+  "legendary": {},
+  "vaults": {},
+  "forge": {
+    "discoveries": [
+      {
+        "agent_id": "A-0001",
+        "agent_name": "PrismHawk",
+        "message": "Quest Scroll forged \u2014 10 quest types, animated rune unfurl, reads brain state for contextual quests",
+        "kind": "gold",
+        "shards": 25,
+        "timestamp": "2026-02-09 21:09:29"
+      },
+      {
+        "agent_id": "A-0003",
+        "agent_name": "PixelPanther",
+        "message": "diamond test",
+        "kind": "diamond",
+        "shards": 50,
+        "timestamp": "2026-02-17 13:41:18"
+      },
+      {
+        "agent_id": "A-0003",
+        "agent_name": "PixelPanther",
+        "message": "gold break",
+        "kind": "gold",
+        "shards": 25,
+        "timestamp": "2026-02-17 13:41:18"
+      },
+      {
+        "agent_id": "A-0003",
+        "agent_name": "PixelPanther",
+        "message": "diamond back",
+        "kind": "diamond",
+        "shards": 50,
+        "timestamp": "2026-02-17 13:41:18"
+      },
+      {
+        "agent_id": "A-0003",
+        "agent_name": "PixelPanther",
+        "message": "diamond again",
+        "kind": "diamond",
+        "shards": 50,
+        "timestamp": "2026-02-17 13:41:18"
+      },
+      {
+        "agent_id": "A-0003",
+        "agent_name": "PixelPanther",
+        "message": "critical find",
+        "kind": "critical",
+        "shards": 40,
+        "timestamp": "2026-02-17 13:41:18"
+      }
+    ],
+    "badges_earned": [
+      {
+        "badge": "first_blood",
+        "agent_id": "A-0001",
+        "timestamp": "2026-02-09 21:09:29"
+      },
+      {
+        "badge": "first_blood",
+        "agent_id": "A-0003",
+        "timestamp": "2026-02-17 13:41:18"
+      },
+      {
+        "badge": "diamond_hands",
+        "agent_id": "A-0003",
+        "timestamp": "2026-02-17 13:41:18"
+      },
+      {
+        "badge": "combo_breaker",
+        "agent_id": "A-0003",
+        "timestamp": "2026-02-17 13:41:18"
+      },
+      {
+        "badge": "eagle_eye",
+        "agent_id": "A-0003",
+        "timestamp": "2026-02-17 13:41:18"
+      }
+    ],
+    "agent_scores": {
+      "A-0001": {
+        "name": "PrismHawk",
+        "shards": 25,
+        "discoveries": 1,
+        "badges": [
+          "first_blood"
+        ]
+      },
+      "A-0003": {
+        "name": "PixelPanther",
+        "shards": 215,
+        "discoveries": 5,
+        "badges": [
+          "first_blood",
+          "diamond_hands",
+          "combo_breaker",
+          "eagle_eye"
+        ]
+      }
+    },
+    "total_shards": 240,
+    "total_diamonds": 3,
+    "total_gold": 2,
+    "session_discoveries": 6,
+    "streak": 0
+  },
+  "scrolls": {
+    "disk-imaging-linux-drive-copying-volume-imaging-and-disk-cloning": {
+      "topic": "disk-imaging",
+      "title": "Linux Drive Copying, Volume Imaging, and Disk Cloning",
+      "tier": "deep",
+      "source": "research compilation",
+      "tags": [
+        "dd",
+        "dc3dd",
+        "ddrescue",
+        "clonezilla",
+        "partclone",
+        "forensics",
+        "imaging",
+        "cloning",
+        "lvm",
+        "qemu",
+        "ewf"
+      ],
+      "created": "2026-02-13 04:36:31",
+      "updated": "2026-02-13 04:36:31",
+      "times_read": 0,
+      "path": "/home/rathin/.claude/projects/-home-rathin/memory/scrolls/disk-imaging-linux-drive-copying-volume-imaging-and-disk-cloning.md"
+    },
+    "file-recovery-forensics-linux": {
+      "topic": "forensics",
+      "title": "File Recovery, Undelete & Digital Forensics on Linux",
+      "tier": "deep",
+      "source": "multi-source research (ext4magic docs, Sleuth Kit wiki, Volatility3 docs, Plaso docs, CGSecurity, forensics.wiki, ElcomSoft, SANS, academic papers)",
+      "tags": [
+        "forensics",
+        "recovery",
+        "ext4",
+        "ntfs",
+        "fat32",
+        "exfat",
+        "carving",
+        "volatility",
+        "plaso",
+        "ddrescue",
+        "luks",
+        "sqlite",
+        "ssd",
+        "trim",
+        "slack-space",
+        "testdisk",
+        "photorec",
+        "extundelete",
+        "ext4magic",
+        "scalpel",
+        "foremost",
+        "bulk_extractor",
+        "sleuthkit",
+        "timeline"
+      ],
+      "created": "2026-02-13",
+      "updated": "2026-02-13",
+      "times_read": 0,
+      "path": "/home/rathin/.claude/projects/-home-rathin/memory/scrolls/file-recovery-forensics-linux.md"
+    },
+    "casestar-turbo-casestar-turbo-v1-1-architecture-audit": {
+      "topic": "casestar-turbo",
+      "title": "CaseStar-Turbo v1.1 Architecture Audit",
+      "tier": "deep",
+      "source": "code-audit-2026-02-20",
+      "tags": [
+        "architecture",
+        "audit",
+        "fastapi",
+        "nextjs",
+        "chromadb",
+        "rag",
+        "vector-search"
+      ],
+      "created": "2026-02-20 16:51:13",
+      "updated": "2026-02-20 16:51:13",
+      "times_read": 0,
+      "path": "/home/rathin/.claude/projects/-home-rathin/memory/scrolls/casestar-turbo-casestar-turbo-v1-1-architecture-audit.md"
+    },
+    "ansi-art-terminal-graphics-ansi-escape-sequences-unicode-art-and-color-systems": {
+      "topic": "ansi_art",
+      "title": "Terminal Graphics \u2014 ANSI Escape Sequences, Unicode Art, and Color Systems",
+      "tier": "deep",
+      "source": "ECMA-48 standard, XTerm docs, Unicode.org charts, terminal graphics research",
+      "tags": [
+        "ansi",
+        "escape-codes",
+        "sgr",
+        "true-color",
+        "256-color",
+        "box-drawing",
+        "block-elements",
+        "braille",
+        "pixel-art",
+        "gradients",
+        "animation",
+        "cursor-control",
+        "figlet",
+        "tui"
+      ],
+      "created": "2026-02-20 16:58:24",
+      "updated": "2026-02-20 16:58:24",
+      "times_read": 0,
+      "path": "/home/rathin/.claude/projects/-home-rathin/memory/scrolls/ansi-art-terminal-graphics-ansi-escape-sequences-unicode-art-and-color-systems.md"
+    },
+    "devialet-phantom-ii-linux-full-pipeline-devialet-phantom-ii-linux-bt-a2dp-comple": {
+      "topic": "devialet_phantom_ii_linux_full_pipeline",
+      "title": "Devialet Phantom II Linux BT A2DP Complete Playbook",
+      "tier": "deep",
+      "source": "hands-on debugging session 2026-03-01",
+      "tags": [
+        "bluetooth",
+        "audio",
+        "pipewire",
+        "wireplumber",
+        "devialet",
+        "a2dp",
+        "linux",
+        "diamondforge"
+      ],
+      "created": "2026-03-01 14:42:57",
+      "updated": "2026-03-01 14:42:57",
+      "times_read": 1,
+      "path": "/home/rathin/.claude/projects/-home-rathin/memory/scrolls/devialet-phantom-ii-linux-full-pipeline-devialet-phantom-ii-linux-bt-a2dp-comple.md",
+      "last_read": "2026-03-01 14:42:57"
+    }
+  },
+  "personality": {
+    "unlocked": true,
+    "name": "AegisLogicOmega",
+    "traits": {
+      "approach": {
+        "pole": "Methodical",
+        "strength": 1.0
+      },
+      "focus": {
+        "pole": "Defensive",
+        "strength": 1.0
+      },
+      "style": {
+        "pole": "Balanced",
+        "strength": 0.5
+      },
+      "curiosity": {
+        "pole": "Explorer",
+        "strength": 0.64
+      },
+      "social": {
+        "pole": "Lone Wolf",
+        "strength": 1.0
+      },
+      "grit": {
+        "pole": "Paper Hands",
+        "strength": 0.5
+      }
+    },
+    "voice": "paranoiac architect",
+    "tagline": "Builds walls that have walls. Trusts no one. Not even the walls.",
+    "history": [],
+    "opinions": [],
+    "evolved_at": [
+      {
+        "level": 57,
+        "timestamp": "2026-03-01 23:51:27",
+        "event": "awakened"
+      }
+    ]
+  }
+}
