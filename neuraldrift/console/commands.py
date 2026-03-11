@@ -137,9 +137,12 @@ class CommandRegistry:
         if result is None:
             self._app.log_event("error", "Server not connected")
             return
-        self._app.log_event("cmd", f"Stats: {result.get('facts',0)} facts, {result.get('xp',0)} XP, "
-                           f"Lv{result.get('level',0)} {result.get('title','')}, "
-                           f"{result.get('topics',0)} topics, {result.get('agents_total',0)} agents")
+        self._app.log_event(
+            "cmd",
+            f"Stats: {result.get('facts', 0)} facts, {result.get('xp', 0)} XP, "
+            f"Lv{result.get('level', 0)} {result.get('title', '')}, "
+            f"{result.get('topics', 0)} topics, {result.get('agents_total', 0)} agents",
+        )
 
     async def _cmd_heatmap(self, args: str):
         result = await self._app.client.call("heatmap")
@@ -173,18 +176,22 @@ class CommandRegistry:
             return
         self._app.log_event("cmd", f"Agent roster ({len(result)})")
         for a in result[-10:]:
-            self._app.log_event("info", f"  #{a.get('id','?')} {a.get('name','?')} "
-                               f"[{a.get('status','?')}] {a.get('task','')[:40]}")
+            self._app.log_event(
+                "info", f"  #{a.get('id', '?')} {a.get('name', '?')} [{a.get('status', '?')}] {a.get('task', '')[:40]}"
+            )
 
     async def _cmd_scouts(self, args: str):
         result = await self._app.client.call("scout_status")
         if result is None:
             self._app.log_event("error", "Server not connected")
             return
-        self._app.log_event("cmd", f"Scouts: {result.get('total',0)} total, "
-                           f"{result.get('pending',0)} pending, "
-                           f"{result.get('returned',0)} returned, "
-                           f"{result.get('absorbed',0)} absorbed")
+        self._app.log_event(
+            "cmd",
+            f"Scouts: {result.get('total', 0)} total, "
+            f"{result.get('pending', 0)} pending, "
+            f"{result.get('returned', 0)} returned, "
+            f"{result.get('absorbed', 0)} absorbed",
+        )
 
     async def _cmd_associate(self, args: str):
         if not args:
@@ -199,7 +206,7 @@ class CommandRegistry:
             return
         self._app.log_event("cmd", f"Associations for '{args[:20]}' -> {len(result)} matches")
         for f in result[:6]:
-            self._app.log_event("info", f"  [{f.get('topic','')}] {f.get('fact','')[:50]}")
+            self._app.log_event("info", f"  [{f.get('topic', '')}] {f.get('fact', '')[:50]}")
 
     # ── Player commands ───────────────────────────────────────────────
 
@@ -234,6 +241,7 @@ class CommandRegistry:
         self._app.log_event("cmd", f"Playlist ({len(pl)} tracks)")
         for i, p in enumerate(pl):
             from pathlib import Path
+
             name = Path(p).stem
             marker = ">" if i == self._app.player.current_index else " "
             self._app.log_event("info", f"  {marker} {i + 1:3d}. {name}")

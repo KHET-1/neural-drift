@@ -19,17 +19,18 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from neuraldrift.output import C, success, warning, info, visible_len, pad_to_width
 from neuraldrift.banners import banner, divider
 from neuraldrift.brain import Brain
-
+from neuraldrift.output import C, info, pad_to_width, success, visible_len, warning
 
 # ═══════════════════════════════════════
 # RENDERING HELPERS
 # ═══════════════════════════════════════
 
-def bar(value, maximum, width=30, fill_char="█", empty_char="░",
-        color_low=C.RED, color_mid=C.YELLOW, color_high=C.GREEN):
+
+def bar(
+    value, maximum, width=30, fill_char="█", empty_char="░", color_low=C.RED, color_mid=C.YELLOW, color_high=C.GREEN
+):
     """Render a colored progress bar."""
     pct = min(value / maximum, 1.0) if maximum > 0 else 0
     filled = int(width * pct)
@@ -62,7 +63,9 @@ def box(title, lines, width=58, border_color=C.CYAN):
     bc = border_color
     inner = width - 2
     print(f"  {bc}╔{'═' * inner}╗{C.RESET}")
-    print(f"  {bc}║{C.RESET} {pad_to_width(f'{C.BOLD}{C.WHITE}{title}{C.RESET}', width - 4 + len(C.BOLD) + len(C.WHITE) + len(C.RESET))} {bc}║{C.RESET}")
+    print(
+        f"  {bc}║{C.RESET} {pad_to_width(f'{C.BOLD}{C.WHITE}{title}{C.RESET}', width - 4 + len(C.BOLD) + len(C.WHITE) + len(C.RESET))} {bc}║{C.RESET}"
+    )
     print(f"  {bc}╠{'═' * inner}╣{C.RESET}")
     for line in lines:
         vlen = visible_len(line)
@@ -89,6 +92,7 @@ def heatmap_row(label, count, max_count, width=20):
 # DASHBOARD PANELS
 # ═══════════════════════════════════════
 
+
 def panel_brain_status(brain):
     """XP, level, and health overview."""
     meta = brain.db.get("meta", {})
@@ -103,9 +107,19 @@ def panel_brain_status(brain):
 
     # Level title
     titles = {
-        0: "Blank Slate", 1: "Awakened", 2: "Observer", 3: "Student",
-        5: "Apprentice", 8: "Practitioner", 10: "Specialist", 15: "Expert",
-        20: "Master", 30: "Sage", 50: "Oracle", 75: "Transcendent", 100: "Omniscient",
+        0: "Blank Slate",
+        1: "Awakened",
+        2: "Observer",
+        3: "Student",
+        5: "Apprentice",
+        8: "Practitioner",
+        10: "Specialist",
+        15: "Expert",
+        20: "Master",
+        30: "Sage",
+        50: "Oracle",
+        75: "Transcendent",
+        100: "Omniscient",
     }
     title = "Sage"
     for threshold in sorted(titles.keys(), reverse=True):
@@ -116,9 +130,9 @@ def panel_brain_status(brain):
     xp_bar = bar(xp_in_level, 100, width=24)
 
     lines = [
-        f"{C.BOLD}Level {level}{C.RESET} {C.DIM}\"{title}\"{C.RESET}",
+        f'{C.BOLD}Level {level}{C.RESET} {C.DIM}"{title}"{C.RESET}',
         f"XP: {C.GREEN}{xp}{C.RESET} {xp_bar} {C.DIM}{xp_in_level}/100{C.RESET}",
-        f"",
+        "",
         f"{C.CYAN}{total_facts}{C.RESET} facts across {C.CYAN}{topics}{C.RESET} topics",
         f"{C.MAGENTA}{soft}{C.RESET} soft notes | {C.YELLOW}{prompts}{C.RESET} prompts",
     ]
@@ -172,7 +186,9 @@ def panel_confidence_distribution(brain):
     for (label, count), color in zip(buckets.items(), colors):
         w = int(20 * count / max_b)
         pct = count / total * 100
-        lines.append(f"{C.WHITE}{label:<10}{C.RESET} {color}{'█' * w}{C.GRAY}{'░' * (20 - w)}{C.RESET} {C.DIM}{count} ({pct:.0f}%){C.RESET}")
+        lines.append(
+            f"{C.WHITE}{label:<10}{C.RESET} {color}{'█' * w}{C.GRAY}{'░' * (20 - w)}{C.RESET} {C.DIM}{count} ({pct:.0f}%){C.RESET}"
+        )
 
     box("CONFIDENCE DISTRIBUTION", lines, border_color=C.YELLOW)
 
@@ -184,11 +200,15 @@ def panel_agents(brain):
     legends = brain.db.get("legendary", {})
 
     if not agents:
-        box("AGENT HIERARCHY", [
-            f"{C.GRAY}No agents deployed yet{C.RESET}",
-            f"",
-            f"{C.DIM}Use brain.agent_checkin() to deploy{C.RESET}",
-        ], border_color=C.MAGENTA)
+        box(
+            "AGENT HIERARCHY",
+            [
+                f"{C.GRAY}No agents deployed yet{C.RESET}",
+                "",
+                f"{C.DIM}Use brain.agent_checkin() to deploy{C.RESET}",
+            ],
+            border_color=C.MAGENTA,
+        )
         return
 
     lines = []
@@ -226,7 +246,9 @@ def panel_agents(brain):
         score = data.get("score", 0)
         traits = data.get("traits", [])
         trait_str = f" {C.DIM}[{', '.join(traits[:2])}]{C.RESET}" if traits else ""
-        lines.append(f"  {C.WHITE}{name:<18}{C.RESET} {C.GREEN}{missions}m{C.RESET} {C.CYAN}{score:.0f}pts{C.RESET}{trait_str}")
+        lines.append(
+            f"  {C.WHITE}{name:<18}{C.RESET} {C.GREEN}{missions}m{C.RESET} {C.CYAN}{score:.0f}pts{C.RESET}{trait_str}"
+        )
     if len(agents) > 6:
         lines.append(f"  {C.DIM}... +{len(agents) - 6} more{C.RESET}")
 
@@ -319,7 +341,9 @@ def panel_prompt_vault(brain):
                 if isinstance(p, dict):
                     top_score = max(top_score, p.get("score", 0))
             score_color = C.GREEN if top_score >= 70 else C.YELLOW if top_score >= 40 else C.RED
-            lines.append(f"{C.WHITE}{cat:<20}{C.RESET} {C.DIM}x{count}{C.RESET}  best: {score_color}{top_score:.0f}{C.RESET}")
+            lines.append(
+                f"{C.WHITE}{cat:<20}{C.RESET} {C.DIM}x{count}{C.RESET}  best: {score_color}{top_score:.0f}{C.RESET}"
+            )
     else:
         lines.append(f"{C.DIM}{len(prompts)} prompts (legacy format){C.RESET}")
 
@@ -329,6 +353,7 @@ def panel_prompt_vault(brain):
 # ═══════════════════════════════════════
 # MAIN DASHBOARD RENDER
 # ═══════════════════════════════════════
+
 
 def render_dashboard(brain):
     """Render the full terminal dashboard."""

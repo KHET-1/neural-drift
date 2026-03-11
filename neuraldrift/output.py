@@ -7,47 +7,49 @@ Usage:
 
 import re
 import sys
-import time
 import threading
+import time
 import unicodedata
 
 # ANSI escape sequence regex — strips ALL SGR codes for visible length calculation
-_ANSI_RE = re.compile(r'\033\[[0-9;]*m')
+_ANSI_RE = re.compile(r"\033\[[0-9;]*m")
+
 
 # ANSI color codes
 class C:
-    RED     = '\033[91m'
-    GREEN   = '\033[92m'
-    YELLOW  = '\033[93m'
-    BLUE    = '\033[94m'
-    MAGENTA = '\033[95m'
-    CYAN    = '\033[96m'
-    WHITE   = '\033[97m'
-    GRAY    = '\033[90m'
-    BOLD    = '\033[1m'
-    DIM     = '\033[2m'
-    UNDERLINE = '\033[4m'
-    RESET   = '\033[0m'
-    BG_RED  = '\033[41m'
-    BG_GREEN = '\033[42m'
-    BG_YELLOW = '\033[43m'
-    BG_BLUE = '\033[44m'
+    RED = "\033[91m"
+    GREEN = "\033[92m"
+    YELLOW = "\033[93m"
+    BLUE = "\033[94m"
+    MAGENTA = "\033[95m"
+    CYAN = "\033[96m"
+    WHITE = "\033[97m"
+    GRAY = "\033[90m"
+    BOLD = "\033[1m"
+    DIM = "\033[2m"
+    UNDERLINE = "\033[4m"
+    RESET = "\033[0m"
+    BG_RED = "\033[41m"
+    BG_GREEN = "\033[42m"
+    BG_YELLOW = "\033[43m"
+    BG_BLUE = "\033[44m"
+
 
 def visible_len(text):
     """Calculate the visible display width of text, stripping ANSI codes
     and accounting for wide characters (emoji, CJK, etc.)."""
-    stripped = _ANSI_RE.sub('', str(text))
+    stripped = _ANSI_RE.sub("", str(text))
     width = 0
     for ch in stripped:
         eaw = unicodedata.east_asian_width(ch)
-        if eaw in ('W', 'F'):  # Wide or Fullwidth = 2 columns
+        if eaw in ("W", "F"):  # Wide or Fullwidth = 2 columns
             width += 2
         else:
             width += 1
     return width
 
 
-def pad_to_width(text, target_width, fill=' '):
+def pad_to_width(text, target_width, fill=" "):
     """Pad text to a target visible width, accounting for ANSI codes and wide chars."""
     current = visible_len(text)
     padding = max(0, target_width - current)
@@ -57,14 +59,32 @@ def pad_to_width(text, target_width, fill=' '):
 def _print(color, symbol, msg, **kwargs):
     print(f"{color}{symbol}{C.RESET} {msg}", **kwargs)
 
-def success(msg, **kw):  _print(C.GREEN,   '[+]', msg, **kw)
-def error(msg, **kw):    _print(C.RED,     '[-]', msg, **kw)
-def warning(msg, **kw):  _print(C.YELLOW,  '[!]', msg, **kw)
-def info(msg, **kw):     _print(C.BLUE,    '[*]', msg, **kw)
-def debug(msg, **kw):    _print(C.GRAY,    '[~]', msg, **kw)
-def critical(msg, **kw): _print(C.BG_RED + C.WHITE, '[!!!]', msg, **kw)
 
-def header(title, width=60, char='═'):
+def success(msg, **kw):
+    _print(C.GREEN, "[+]", msg, **kw)
+
+
+def error(msg, **kw):
+    _print(C.RED, "[-]", msg, **kw)
+
+
+def warning(msg, **kw):
+    _print(C.YELLOW, "[!]", msg, **kw)
+
+
+def info(msg, **kw):
+    _print(C.BLUE, "[*]", msg, **kw)
+
+
+def debug(msg, **kw):
+    _print(C.GRAY, "[~]", msg, **kw)
+
+
+def critical(msg, **kw):
+    _print(C.BG_RED + C.WHITE, "[!!!]", msg, **kw)
+
+
+def header(title, width=60, char="═"):
     """Print a formatted section header."""
     title_width = visible_len(title)
     pad = (width - title_width - 2) // 2
@@ -72,14 +92,17 @@ def header(title, width=60, char='═'):
     right_pad = width - title_width - 2 - pad  # handle odd widths
     print(f"\n{C.CYAN}{C.BOLD}{char * pad} {title} {char * right_pad}{C.RESET}")
 
+
 def subheader(title):
     """Print a subsection header."""
     print(f"\n{C.MAGENTA}{C.BOLD}── {title} ──{C.RESET}")
+
 
 def kvprint(key, value, key_color=None):
     """Print a key-value pair, aligned."""
     kc = key_color or C.CYAN
     print(f"  {kc}{key:<20}{C.RESET} {value}")
+
 
 def table_print(headers, rows, colors=None):
     """Print a formatted terminal table with dynamic column widths."""
@@ -112,33 +135,39 @@ def table_print(headers, rows, colors=None):
             cells.append(f"{color}{pad_to_width(str(cell), w)}{reset}")
         print(f" {' │ '.join(cells)}")
 
+
 def progress_bar(current, total, width=40, label=""):
     """Print an inline progress bar."""
     pct = current / total if total else 0
     filled = int(width * pct)
     bar = f"{'█' * filled}{'░' * (width - filled)}"
     color = C.GREEN if pct >= 0.8 else C.YELLOW if pct >= 0.4 else C.RED
-    sys.stdout.write(f"\r  {color}{bar}{C.RESET} {pct*100:5.1f}% {label}")
+    sys.stdout.write(f"\r  {color}{bar}{C.RESET} {pct * 100:5.1f}% {label}")
     if current >= total:
-        sys.stdout.write('\n')
+        sys.stdout.write("\n")
     sys.stdout.flush()
+
 
 def severity_color(level):
     """Return color code for severity level."""
     level = str(level).lower()
     return {
-        'critical': C.BG_RED + C.WHITE,
-        'high': C.RED,
-        'medium': C.YELLOW,
-        'low': C.BLUE,
-        'info': C.GRAY,
+        "critical": C.BG_RED + C.WHITE,
+        "high": C.RED,
+        "medium": C.YELLOW,
+        "low": C.BLUE,
+        "info": C.GRAY,
     }.get(level, C.WHITE)
+
 
 def confidence_tag(pct):
     """Return a colored confidence indicator."""
-    if pct >= 90:   return f"{C.GREEN}[{pct}% HIGH]{C.RESET}"
-    elif pct >= 70: return f"{C.YELLOW}[{pct}% MED]{C.RESET}"
-    else:           return f"{C.RED}[{pct}% LOW]{C.RESET}"
+    if pct >= 90:
+        return f"{C.GREEN}[{pct}% HIGH]{C.RESET}"
+    elif pct >= 70:
+        return f"{C.YELLOW}[{pct}% MED]{C.RESET}"
+    else:
+        return f"{C.RED}[{pct}% LOW]{C.RESET}"
 
 
 # ═══════════════════════════════════════════════════════
@@ -148,6 +177,7 @@ def confidence_tag(pct):
 # Spins faster with excitement level.
 # Goes UNICORN (full rainbow cycle) when maxed.
 #
+
 
 class CandyCane:
     """
@@ -192,12 +222,12 @@ class CandyCane:
 
     # Unicorn rainbow color sequence
     _RAINBOW = [
-        '\033[91m',  # red
-        '\033[93m',  # yellow
-        '\033[92m',  # green
-        '\033[96m',  # cyan
-        '\033[94m',  # blue
-        '\033[95m',  # magenta
+        "\033[91m",  # red
+        "\033[93m",  # yellow
+        "\033[92m",  # green
+        "\033[96m",  # cyan
+        "\033[94m",  # blue
+        "\033[95m",  # magenta
     ]
 
     def __init__(self, label="Working", excitement=0.0):

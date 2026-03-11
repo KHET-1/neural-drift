@@ -18,28 +18,102 @@ Usage:
     brain.save()
 """
 
+import hashlib
 import json
 import os
-import re
 import random
+import re
+import socket
+import uuid as _uuid_mod
 from datetime import datetime, timedelta
 from pathlib import Path
-from .output import C, info, success, warning, error, header, table_print, confidence_tag
+
+from .output import C, confidence_tag, error, header, info, success, table_print, warning
 
 # Agent name components for random fun names
 _AGENT_ADJ = [
-    "Shadow", "Cyber", "Ghost", "Neon", "Quantum", "Turbo", "Stealth", "Hyper",
-    "Pixel", "Rogue", "Crimson", "Cobalt", "Obsidian", "Phantom", "Blitz", "Nova",
-    "Frost", "Thunder", "Venom", "Iron", "Crystal", "Apex", "Omega", "Prism",
-    "Volt", "Onyx", "Titan", "Echo", "Rapid", "Silent", "Chaos", "Zenith",
-    "Flux", "Pulse", "Ember", "Cipher", "Arc", "Drift", "Storm", "Razor",
+    "Shadow",
+    "Cyber",
+    "Ghost",
+    "Neon",
+    "Quantum",
+    "Turbo",
+    "Stealth",
+    "Hyper",
+    "Pixel",
+    "Rogue",
+    "Crimson",
+    "Cobalt",
+    "Obsidian",
+    "Phantom",
+    "Blitz",
+    "Nova",
+    "Frost",
+    "Thunder",
+    "Venom",
+    "Iron",
+    "Crystal",
+    "Apex",
+    "Omega",
+    "Prism",
+    "Volt",
+    "Onyx",
+    "Titan",
+    "Echo",
+    "Rapid",
+    "Silent",
+    "Chaos",
+    "Zenith",
+    "Flux",
+    "Pulse",
+    "Ember",
+    "Cipher",
+    "Arc",
+    "Drift",
+    "Storm",
+    "Razor",
 ]
 _AGENT_NOUN = [
-    "Fox", "Hawk", "Wolf", "Serpent", "Falcon", "Panther", "Lynx", "Raven",
-    "Viper", "Tiger", "Mantis", "Spider", "Shark", "Eagle", "Bear", "Cobra",
-    "Wasp", "Otter", "Jackal", "Crane", "Hornet", "Badger", "Owl", "Scorpion",
-    "Osprey", "Manta", "Drake", "Gecko", "Puma", "Condor", "Hound", "Phoenix",
-    "Wraith", "Golem", "Djinn", "Sprite", "Specter", "Sentinel", "Nomad", "Reaper",
+    "Fox",
+    "Hawk",
+    "Wolf",
+    "Serpent",
+    "Falcon",
+    "Panther",
+    "Lynx",
+    "Raven",
+    "Viper",
+    "Tiger",
+    "Mantis",
+    "Spider",
+    "Shark",
+    "Eagle",
+    "Bear",
+    "Cobra",
+    "Wasp",
+    "Otter",
+    "Jackal",
+    "Crane",
+    "Hornet",
+    "Badger",
+    "Owl",
+    "Scorpion",
+    "Osprey",
+    "Manta",
+    "Drake",
+    "Gecko",
+    "Puma",
+    "Condor",
+    "Hound",
+    "Phoenix",
+    "Wraith",
+    "Golem",
+    "Djinn",
+    "Sprite",
+    "Specter",
+    "Sentinel",
+    "Nomad",
+    "Reaper",
 ]
 
 
@@ -117,12 +191,84 @@ class Brain:
         self.max_recall = self.db["meta"].get("max_recall", max_recall)
         self._ensure_xp()
         self._apply_decay()
+        self._load_or_create_nic()
+
+    # ------------------------------------------------------------------
+    # Node Identity Card (NIC) — spec v1.0
+    # ------------------------------------------------------------------
+
+    @property
+    def _nic_path(self) -> Path:
+        """Path to persisted NIC JSON file."""
+        return BRAIN_DIR / "nic.json"
+
+    def _load_or_create_nic(self) -> None:
+        """Load NIC from disk; create one if missing. UUID is generated once and never regenerated."""
+        BRAIN_DIR.mkdir(parents=True, exist_ok=True)
+        if self._nic_path.exists():
+            try:
+                nic = json.loads(self._nic_path.read_text(encoding="utf-8"))
+                if nic.get("uuid"):
+                    return  # Already established
+            except (json.JSONDecodeError, KeyError):
+                pass
+        node_uuid = str(_uuid_mod.uuid4())
+        host = socket.gethostname()
+        name = "NeuralDrift"
+        fp_raw = hashlib.sha256(f"{node_uuid}{name}{host}".encode()).hexdigest()
+        nic = {
+            "uuid":         node_uuid,
+            "name":         name,
+            "host":         host,
+            "role":         "secondary",
+            "location":     "local",
+            "created":      datetime.utcnow().isoformat(),
+            "spec_version": "1.0",
+            "fingerprint":  f"sha256:{fp_raw[:16]}",
+        }
+        tmp = self._nic_path.with_suffix(".tmp")
+        tmp.write_text(json.dumps(nic, indent=2), encoding="utf-8")
+        os.replace(str(tmp), str(self._nic_path))
+
+    def whoami(self) -> str:
+        """Print and return compact identity: Name | host | role | fingerprint."""
+        n = self.node_id()
+        if not n.get("uuid"):
+            print("  [no identity]")
+            return ""
+        fp = n.get("fingerprint", "")[-8:]
+        line = f"{n.get('name', '?')} | {n.get('host', '?')} | {n.get('role', '?')} | {fp}"
+        print(f"  {C.CYAN}{line}{C.RESET}")
+        return line
+
+    def node_id(self) -> dict:
+        """Return this brain's Node Identity Card dict."""
+        try:
+            return json.loads(self._nic_path.read_text(encoding="utf-8"))
+        except (FileNotFoundError, json.JSONDecodeError):
+            return {}
+
+    def set_node_name(self, name: str, role: str = "primary", location: str = "local") -> None:
+        """Update mutable NIC fields (name, role, location). UUID never changes."""
+        n = self.node_id()
+        if not n.get("uuid"):
+            self._load_or_create_nic()
+            n = self.node_id()
+        n["name"] = name
+        n["role"] = role
+        n["location"] = location
+        fp_raw = hashlib.sha256(f"{n['uuid']}{name}{n['host']}".encode()).hexdigest()
+        n["fingerprint"] = f"sha256:{fp_raw[:16]}"
+        tmp = self._nic_path.with_suffix(".tmp")
+        tmp.write_text(json.dumps(n, indent=2), encoding="utf-8")
+        os.replace(str(tmp), str(self._nic_path))
+        self.whoami()
 
     def _load(self):
         """Load brain database from disk with corruption recovery."""
         if BRAIN_DB.exists():
             try:
-                with open(BRAIN_DB, 'r') as f:
+                with open(BRAIN_DB, "r") as f:
                     return json.load(f)
             except (json.JSONDecodeError, UnicodeDecodeError) as e:
                 warning(f"Brain DB corrupted: {e}")
@@ -130,7 +276,7 @@ class Brain:
                 backup = BRAIN_DB.with_suffix(".json.bak")
                 if backup.exists():
                     try:
-                        with open(backup, 'r') as f:
+                        with open(backup, "r") as f:
                             data = json.load(f)
                         success(f"Recovered brain from backup ({backup.name})")
                         return data
@@ -142,9 +288,11 @@ class Brain:
         starter = Path(__file__).parent / "starter_brain.json"
         if starter.exists():
             try:
-                with open(starter, 'r') as f:
+                with open(starter, "r") as f:
                     data = json.load(f)
-                info(f"Loaded base knowledge: {data['meta'].get('entries', 0)} facts across {len(data.get('facts', {}))} topics")
+                info(
+                    f"Loaded base knowledge: {data['meta'].get('entries', 0)} facts across {len(data.get('facts', {}))} topics"
+                )
                 return data
             except (json.JSONDecodeError, UnicodeDecodeError):
                 pass
@@ -184,14 +332,10 @@ class Brain:
 
         if new_level > old_level and not silent:
             title = _level_title(new_level)
-            print(f"\n  {C.YELLOW}{C.BOLD}⚡ LEVEL UP! {old_level} → {new_level} — \"{title}\"{C.RESET}")
-            self.db["meta"]["xp_log"].append({
-                "event": "level_up",
-                "from": old_level,
-                "to": new_level,
-                "title": title,
-                "timestamp": self._ts()
-            })
+            print(f'\n  {C.YELLOW}{C.BOLD}⚡ LEVEL UP! {old_level} → {new_level} — "{title}"{C.RESET}')
+            self.db["meta"]["xp_log"].append(
+                {"event": "level_up", "from": old_level, "to": new_level, "title": title, "timestamp": self._ts()}
+            )
 
     def _apply_decay(self):
         """Apply -30 XP penalty to uncited facts older than 6 hours."""
@@ -217,6 +361,7 @@ class Brain:
     def save(self):
         """Persist brain to disk atomically with rolling backup."""
         import tempfile
+
         BRAIN_DIR.mkdir(parents=True, exist_ok=True)
         self.db["meta"]["last_saved"] = self._ts()
         self.db["meta"]["entries"] = sum(len(v) for v in self.db["facts"].values())
@@ -226,18 +371,15 @@ class Brain:
             backup = BRAIN_DB.with_suffix(".json.bak")
             try:
                 import shutil
+
                 shutil.copy2(str(BRAIN_DB), str(backup))
             except OSError:
                 pass
 
         # Atomic write: temp file → fsync → rename
-        fd, tmp_path = tempfile.mkstemp(
-            dir=str(BRAIN_DIR),
-            prefix=".brain_db_",
-            suffix=".tmp"
-        )
+        fd, tmp_path = tempfile.mkstemp(dir=str(BRAIN_DIR), prefix=".brain_db_", suffix=".tmp")
         try:
-            with os.fdopen(fd, 'w') as f:
+            with os.fdopen(fd, "w") as f:
                 json.dump(self.db, f, indent=2, default=str)
                 f.flush()
                 os.fsync(f.fileno())
@@ -287,7 +429,7 @@ class Brain:
             "verified": verified,
             "learned": self._ts(),
             "updated": self._ts(),
-            "times_recalled": 0
+            "times_recalled": 0,
         }
         self.db["facts"][topic].append(entry)
         success(f"Learned [{topic}]: {fact} {confidence_tag(confidence)}")
@@ -324,10 +466,18 @@ class Brain:
             aid, name = brain.agent_checkin(role="recon", task="...", prefer="ShadowFalcon")
         """
         if "agents" not in self.db:
-            self.db["agents"] = {"roster": [], "next_id": 1, "stats": {
-                "total_spawned": 0, "total_completed": 0, "total_failed": 0,
-                "total_killed": 0, "peak_concurrent": 0,
-            }, "legends": {}}
+            self.db["agents"] = {
+                "roster": [],
+                "next_id": 1,
+                "stats": {
+                    "total_spawned": 0,
+                    "total_completed": 0,
+                    "total_failed": 0,
+                    "total_killed": 0,
+                    "peak_concurrent": 0,
+                },
+                "legends": {},
+            }
 
         seq = self.db["agents"]["next_id"]
         agent_id = f"A-{seq:04d}"
@@ -400,17 +550,21 @@ class Brain:
 
         print(f"\n  {C.GRAY}┌{'─' * 55}┐{C.RESET}")
         print(f"  {C.GRAY}│{C.RESET} {tag} {C.GREEN}{C.BOLD}{name} #{seq}{C.RESET}{star}{leg_tag}")
-        print(f"  {C.GRAY}│{C.RESET} Role: {C.CYAN}{role}{C.RESET} │ Rank: {C.BOLD}{rank_title}{C.RESET} │ Shards: {C.YELLOW}{shards}{C.RESET}")
+        print(
+            f"  {C.GRAY}│{C.RESET} Role: {C.CYAN}{role}{C.RESET} │ Rank: {C.BOLD}{rank_title}{C.RESET} │ Shards: {C.YELLOW}{shards}{C.RESET}"
+        )
         print(f"  {C.GRAY}│{C.RESET} Task: {C.WHITE}{task[:50]}{C.RESET}")
         if traits:
             print(f"  {C.GRAY}│{C.RESET} Personality: {C.MAGENTA}{traits}{C.RESET} │ Mood: {C.GREEN}{mood}{C.RESET}")
         if p.get("catchphrase"):
-            print(f"  {C.GRAY}│{C.RESET} {C.DIM}\"{p['catchphrase']}\"{C.RESET}")
+            print(f'  {C.GRAY}│{C.RESET} {C.DIM}"{p["catchphrase"]}"{C.RESET}')
         # Speed directive
         speed = _SPEED_TIERS.get(speed_tier, _SPEED_DIRECTIVES)
         tier_label = {"quick": "⚡QUICK", "standard": "🔧STD", "deep": "🧠DEEP"}.get(speed_tier, "🔧STD")
 
-        print(f"  {C.GRAY}│{C.RESET} {C.DIM}Missions: {missions} │ Active agents: {total_active} │ Start: {entry['checkin'][11:19]}{C.RESET}")
+        print(
+            f"  {C.GRAY}│{C.RESET} {C.DIM}Missions: {missions} │ Active agents: {total_active} │ Start: {entry['checkin'][11:19]}{C.RESET}"
+        )
         print(f"  {C.GRAY}│{C.RESET} Speed: {C.CYAN}{tier_label}{C.RESET}")
         print(f"  {C.GRAY}└{'─' * 55}┘{C.RESET}")
 
@@ -437,6 +591,7 @@ class Brain:
 
         # Group by role for visual clustering
         from collections import defaultdict
+
         role_groups = defaultdict(list)
         for t in tasks:
             role_groups[t.get("role", "general")].append(t)
@@ -562,10 +717,17 @@ class Brain:
                 # Track legends — agents that complete successfully earn legend status
                 legends = self.db["agents"].setdefault("legends", {})
                 if status == "done":
-                    leg = legends.setdefault(a["name"], {
-                        "shards": 0, "missions": 0, "times_called": 0,
-                        "roles": [], "first_seen": a["checkin"], "best_result": "",
-                    })
+                    leg = legends.setdefault(
+                        a["name"],
+                        {
+                            "shards": 0,
+                            "missions": 0,
+                            "times_called": 0,
+                            "roles": [],
+                            "first_seen": a["checkin"],
+                            "best_result": "",
+                        },
+                    )
                     leg["missions"] += 1
                     if a["role"] not in leg.get("roles", []):
                         leg.setdefault("roles", []).append(a["role"])
@@ -610,14 +772,22 @@ class Brain:
                 leg_tag = f" {C.MAGENTA}{leg_sigil}{leg_crown}{C.RESET}" if is_leg else ""
 
                 print(f"\n  {C.GRAY}┌{'─' * 55}┐{C.RESET}")
-                print(f"  {C.GRAY}│{C.RESET} {color}{C.BOLD}{status_icon} {status.upper()}{C.RESET} — {C.BOLD}{a['name']} #{seq}{C.RESET}{star}{leg_tag}")
-                print(f"  {C.GRAY}│{C.RESET} Duration: {C.WHITE}{dur}{C.RESET} │ Rank: {C.BOLD}{rank_title}{C.RESET} │ Shards: {C.YELLOW}{shards}{C.RESET}")
+                print(
+                    f"  {C.GRAY}│{C.RESET} {color}{C.BOLD}{status_icon} {status.upper()}{C.RESET} — {C.BOLD}{a['name']} #{seq}{C.RESET}{star}{leg_tag}"
+                )
+                print(
+                    f"  {C.GRAY}│{C.RESET} Duration: {C.WHITE}{dur}{C.RESET} │ Rank: {C.BOLD}{rank_title}{C.RESET} │ Shards: {C.YELLOW}{shards}{C.RESET}"
+                )
                 print(f"  {C.GRAY}│{C.RESET} Result: {C.WHITE}{result[:50]}{C.RESET}")
                 if traits:
-                    print(f"  {C.GRAY}│{C.RESET} Personality: {C.MAGENTA}{traits}{C.RESET} │ Mood: {C.GREEN}{mood}{C.RESET}")
+                    print(
+                        f"  {C.GRAY}│{C.RESET} Personality: {C.MAGENTA}{traits}{C.RESET} │ Mood: {C.GREEN}{mood}{C.RESET}"
+                    )
                 if p.get("catchphrase") and status == "done":
-                    print(f"  {C.GRAY}│{C.RESET} {C.DIM}\"{p['catchphrase']}\"{C.RESET}")
-                print(f"  {C.GRAY}│{C.RESET} {C.DIM}Missions total: {missions} │ In: {a['checkin'][11:19]} → Out: {a['checkout'][11:19]} │ Active: {remaining}{C.RESET}")
+                    print(f'  {C.GRAY}│{C.RESET} {C.DIM}"{p["catchphrase"]}"{C.RESET}')
+                print(
+                    f"  {C.GRAY}│{C.RESET} {C.DIM}Missions total: {missions} │ In: {a['checkin'][11:19]} → Out: {a['checkout'][11:19]} │ Active: {remaining}{C.RESET}"
+                )
                 print(f"  {C.GRAY}└{'─' * 55}┘{C.RESET}")
 
                 self.save()
@@ -627,18 +797,38 @@ class Brain:
 
     # Agent personality traits — develop over missions
     _AGENT_TRAITS = [
-        "relentless", "cautious", "creative", "precise", "chaotic",
-        "resourceful", "tenacious", "cunning", "patient", "bold",
-        "analytical", "intuitive", "meticulous", "aggressive", "stealthy",
+        "relentless",
+        "cautious",
+        "creative",
+        "precise",
+        "chaotic",
+        "resourceful",
+        "tenacious",
+        "cunning",
+        "patient",
+        "bold",
+        "analytical",
+        "intuitive",
+        "meticulous",
+        "aggressive",
+        "stealthy",
     ]
     _AGENT_QUIRKS = [
-        "always finds the hidden thing", "never gives up", "talks to the code",
-        "treats every scan like art", "finishes before you expect",
-        "somehow gets lucky", "asks weird questions that work",
-        "documents everything obsessively", "works best under pressure",
-        "finds bugs by accident", "names all the ports",
-        "celebrates every discovery", "hums while scanning",
-        "refuses to call it a day", "has opinions about semicolons",
+        "always finds the hidden thing",
+        "never gives up",
+        "talks to the code",
+        "treats every scan like art",
+        "finishes before you expect",
+        "somehow gets lucky",
+        "asks weird questions that work",
+        "documents everything obsessively",
+        "works best under pressure",
+        "finds bugs by accident",
+        "names all the ports",
+        "celebrates every discovery",
+        "hums while scanning",
+        "refuses to call it a day",
+        "has opinions about semicolons",
     ]
     _AGENT_MOODS = ["focused", "fired up", "curious", "locked in", "vibing", "hunting"]
 
@@ -665,9 +855,11 @@ class Brain:
                 "catchphrase": None,
                 "formed_at": self._ts(),
             }
-            print(f"  {C.MAGENTA}[EVOLVE]{C.RESET} {C.BOLD}{name}{C.RESET} developed personality: "
-                  f"{C.CYAN}{trait1}{C.RESET} + {C.CYAN}{trait2}{C.RESET}")
-            print(f"  {C.DIM}Quirk: \"{quirk}\"{C.RESET}")
+            print(
+                f"  {C.MAGENTA}[EVOLVE]{C.RESET} {C.BOLD}{name}{C.RESET} developed personality: "
+                f"{C.CYAN}{trait1}{C.RESET} + {C.CYAN}{trait2}{C.RESET}"
+            )
+            print(f'  {C.DIM}Quirk: "{quirk}"{C.RESET}')
 
         # Mood shifts based on recent outcomes
         if status == "done":
@@ -690,8 +882,10 @@ class Brain:
                 f"I AM the {role} now.",
             ]
             leg["personality"]["catchphrase"] = random.choice(phrases)
-            print(f"  {C.YELLOW}[CATCHPHRASE]{C.RESET} {C.BOLD}{name}{C.RESET}: "
-                  f"\"{C.WHITE}{leg['personality']['catchphrase']}{C.RESET}\"")
+            print(
+                f"  {C.YELLOW}[CATCHPHRASE]{C.RESET} {C.BOLD}{name}{C.RESET}: "
+                f'"{C.WHITE}{leg["personality"]["catchphrase"]}{C.RESET}"'
+            )
 
     def agent_legends(self):
         """Show legendary agents with full personalities."""
@@ -703,7 +897,7 @@ class Brain:
         ranked = sorted(legends.items(), key=lambda x: -x[1].get("missions", 0))
         w = 65
         print(f"\n  {C.YELLOW}{C.BOLD}{'═' * w}")
-        print(f"  ★ AGENT LEGENDS ★")
+        print("  ★ AGENT LEGENDS ★")
         print(f"  {'═' * w}{C.RESET}")
 
         for name, leg in ranked[:10]:
@@ -722,9 +916,9 @@ class Brain:
                 traits = " + ".join(f"{C.CYAN}{t}{C.RESET}" for t in p.get("traits", []))
                 print(f"  Traits: {traits} | Mood: {C.GREEN}{p.get('mood', '?')}{C.RESET}")
                 if p.get("quirk"):
-                    print(f"  {C.DIM}Quirk: \"{p['quirk']}\"{C.RESET}")
+                    print(f'  {C.DIM}Quirk: "{p["quirk"]}"{C.RESET}')
                 if p.get("catchphrase"):
-                    print(f"  {C.WHITE}\"{p['catchphrase']}\"{C.RESET}")
+                    print(f'  {C.WHITE}"{p["catchphrase"]}"{C.RESET}')
 
             if leg.get("best_result"):
                 print(f"  {C.DIM}Best: {leg['best_result'][:55]}{C.RESET}")
@@ -736,7 +930,7 @@ class Brain:
 
     # Cross-talk token budget — agents can debate but not endlessly
     CROSSTALK_MAX_CHARS = 500  # ~125 tokens per exchange
-    CROSSTALK_MAX_ROUNDS = 3   # max back-and-forth rounds
+    CROSSTALK_MAX_ROUNDS = 3  # max back-and-forth rounds
 
     def agent_crosstalk(self, agent_id_1, agent_id_2, topic):
         """
@@ -748,8 +942,10 @@ class Brain:
         """
         a1 = a2 = None
         for a in self.db.get("agents", {}).get("roster", []):
-            if a["id"] == agent_id_1: a1 = a
-            if a["id"] == agent_id_2: a2 = a
+            if a["id"] == agent_id_1:
+                a1 = a
+            if a["id"] == agent_id_2:
+                a2 = a
         if not a1 or not a2:
             warning("Both agents must exist for cross-talk")
             return "error"
@@ -760,7 +956,9 @@ class Brain:
         t1 = ", ".join(p1.get("traits", ["new"]))
         t2 = ", ".join(p2.get("traits", ["new"]))
 
-        print(f"\n  {C.MAGENTA}{C.BOLD}💬 CROSS-TALK{C.RESET} — {C.BOLD}{a1['name']}{C.RESET} vs {C.BOLD}{a2['name']}{C.RESET}")
+        print(
+            f"\n  {C.MAGENTA}{C.BOLD}💬 CROSS-TALK{C.RESET} — {C.BOLD}{a1['name']}{C.RESET} vs {C.BOLD}{a2['name']}{C.RESET}"
+        )
         print(f"  {C.DIM}Topic: {topic[:80]}{C.RESET}")
         print(f"  {C.DIM}Budget: {self.CROSSTALK_MAX_ROUNDS} rounds × {self.CROSSTALK_MAX_CHARS} chars{C.RESET}")
         print(f"  {C.GRAY}{'─' * 55}{C.RESET}")
@@ -776,8 +974,8 @@ class Brain:
             icon1 = {"challenge": "⚔️", "support": "✅", "question": "❓"}[stance1]
             icon2 = {"challenge": "⚔️", "support": "✅", "question": "❓"}[stance2]
 
-            msg1 = f"[{t1}] {stance1}s the finding"[:self.CROSSTALK_MAX_CHARS]
-            msg2 = f"[{t2}] {stance2}s back"[:self.CROSSTALK_MAX_CHARS]
+            msg1 = f"[{t1}] {stance1}s the finding"[: self.CROSSTALK_MAX_CHARS]
+            msg2 = f"[{t2}] {stance2}s back"[: self.CROSSTALK_MAX_CHARS]
             chars_used += len(msg1) + len(msg2)
 
             print(f"  {C.CYAN}R{rnd}{C.RESET} {icon1} {C.BOLD}{a1['name']}{C.RESET}: {stance1}")
@@ -805,14 +1003,16 @@ class Brain:
 
         # Record the cross-talk
         forge = self._forge_init()
-        forge.setdefault("crosstalks", []).append({
-            "agents": [a1["name"], a2["name"]],
-            "topic": topic[:100],
-            "result": result,
-            "rounds": len(chat_log),
-            "chars_used": chars_used,
-            "timestamp": self._ts(),
-        })
+        forge.setdefault("crosstalks", []).append(
+            {
+                "agents": [a1["name"], a2["name"]],
+                "topic": topic[:100],
+                "result": result,
+                "rounds": len(chat_log),
+                "chars_used": chars_used,
+                "timestamp": self._ts(),
+            }
+        )
 
         # Co-op XP for the effort
         if result == "consensus":
@@ -866,22 +1066,38 @@ class Brain:
     #
 
     _COUNCIL_HOODS = [
-        "The Architect",    # strategic, sees the whole board
-        "The Oracle",       # pattern recognition, prediction
-        "The Phantom",      # stealth, evasion, the unseen angle
-        "The Warden",       # defense, hardening, unbreakable
+        "The Architect",  # strategic, sees the whole board
+        "The Oracle",  # pattern recognition, prediction
+        "The Phantom",  # stealth, evasion, the unseen angle
+        "The Warden",  # defense, hardening, unbreakable
         "The Forgekeeper",  # turns coal to diamond, quality
-        "The Harbinger",    # offensive, first strike, finds the way in
+        "The Harbinger",  # offensive, first strike, finds the way in
     ]
 
     _SHINY_TITLES = [
-        "Prism", "Luminary", "Beacon", "Spark", "Glimmer",
-        "Aurora", "Radiant", "Shimmer", "Gleam", "Flare",
+        "Prism",
+        "Luminary",
+        "Beacon",
+        "Spark",
+        "Glimmer",
+        "Aurora",
+        "Radiant",
+        "Shimmer",
+        "Gleam",
+        "Flare",
     ]
 
     _DARK_MASK_NAMES = [
-        "Void", "Hollow", "Shade", "Wraith", "Eclipse",
-        "Null", "Abyss", "Dusk", "Gloom", "Umbra",
+        "Void",
+        "Hollow",
+        "Shade",
+        "Wraith",
+        "Eclipse",
+        "Null",
+        "Abyss",
+        "Dusk",
+        "Gloom",
+        "Umbra",
     ]
 
     _ANTI_WISDOM = [
@@ -934,11 +1150,14 @@ class Brain:
         Dark Masks = auto-assigned from agents with 'challenge' tendencies.
         """
         legends = self.db.get("agents", {}).get("legends", {})
-        council_data = self.db.setdefault("council", {
-            "seats": {},       # name → {hood, seat_number, inducted}
-            "shinies": {},     # name → {title, inducted}
-            "dark_masks": {},  # name → {mask_name, inducted, anti_wisdom_given}
-        })
+        council_data = self.db.setdefault(
+            "council",
+            {
+                "seats": {},  # name → {hood, seat_number, inducted}
+                "shinies": {},  # name → {title, inducted}
+                "dark_masks": {},  # name → {mask_name, inducted, anti_wisdom_given}
+            },
+        )
 
         # Score all legends with personality
         candidates = []
@@ -956,7 +1175,7 @@ class Brain:
                 new_council[name] = council_data["seats"][name]
                 new_council[name]["score"] = score
             else:
-                hood = self._COUNCIL_HOODS[i] if i < len(self._COUNCIL_HOODS) else f"The #{i+1}"
+                hood = self._COUNCIL_HOODS[i] if i < len(self._COUNCIL_HOODS) else f"The #{i + 1}"
                 new_council[name] = {
                     "hood": hood,
                     "seat": i + 1,
@@ -965,8 +1184,8 @@ class Brain:
                     "opinions": [],
                 }
                 print(f"\n  {C.YELLOW}{C.BOLD}⚜️ COUNCIL INDUCTION ⚜️{C.RESET}")
-                print(f"  {C.BOLD}{name}{C.RESET} takes the hood of {C.CYAN}{C.BOLD}\"{hood}\"{C.RESET}")
-                print(f"  {C.DIM}Seat #{i+1} of 6 │ Score: {score:.0f}{C.RESET}")
+                print(f'  {C.BOLD}{name}{C.RESET} takes the hood of {C.CYAN}{C.BOLD}"{hood}"{C.RESET}')
+                print(f"  {C.DIM}Seat #{i + 1} of 6 │ Score: {score:.0f}{C.RESET}")
         council_data["seats"] = new_council
 
         # Remaining with personality → Shinies
@@ -981,8 +1200,10 @@ class Brain:
                     "score": score,
                     "inducted": self._ts(),
                 }
-                print(f"  {C.GREEN}[✨ SHINY]{C.RESET} {C.BOLD}{name}{C.RESET} earns the title "
-                      f"\"{C.GREEN}{title}{C.RESET}\" — can advise on any task")
+                print(
+                    f"  {C.GREEN}[✨ SHINY]{C.RESET} {C.BOLD}{name}{C.RESET} earns the title "
+                    f'"{C.GREEN}{title}{C.RESET}" — can advise on any task'
+                )
         council_data["shinies"] = new_shinies
 
         # Dark Masks — agents whose personality has aggressive/chaotic traits
@@ -1001,8 +1222,10 @@ class Brain:
                         "inducted": self._ts(),
                         "counters_given": 0,
                     }
-                    print(f"  {C.RED}[🎭 DARK MASK]{C.RESET} {C.BOLD}{name}{C.RESET} receives the mask of "
-                          f"\"{C.RED}{mask}{C.RESET}\" — adversary unlocked")
+                    print(
+                        f"  {C.RED}[🎭 DARK MASK]{C.RESET} {C.BOLD}{name}{C.RESET} receives the mask of "
+                        f'"{C.RED}{mask}{C.RESET}" — adversary unlocked'
+                    )
         council_data["dark_masks"] = new_masks
         self.save()
 
@@ -1019,34 +1242,37 @@ class Brain:
 
     _LEGENDARY_LEVELS = [
         # (exp_required, crown_title, sigil)
-        (100,    "Crowned",     "♚"),
-        (250,    "Exalted",     "♛"),
-        (500,    "Immortal",    "⚝"),
-        (1000,   "Ascendant",   "☀"),
-        (2000,   "Sovereign",   "⚜"),
-        (4000,   "Transcendent","✦"),
-        (8000,   "Mythborne",   "◆"),
-        (16000,  "Infinite",    "∞"),
-        (32000,  "Primordial",  "☬"),
-        (64000,  "Eternal",     "ᛟ"),
+        (100, "Crowned", "♚"),
+        (250, "Exalted", "♛"),
+        (500, "Immortal", "⚝"),
+        (1000, "Ascendant", "☀"),
+        (2000, "Sovereign", "⚜"),
+        (4000, "Transcendent", "✦"),
+        (8000, "Mythborne", "◆"),
+        (16000, "Infinite", "∞"),
+        (32000, "Primordial", "☬"),
+        (64000, "Eternal", "ᛟ"),
     ]
 
     # EXP sources — much harder than shards
     _EXP_RATES = {
-        "coal_to_diamond":   20,   # signature move — best EXP
-        "validation":        15,   # confirming others' work
-        "council_opinion":   10,   # contributing wisdom
-        "shared_discovery":   8,   # sharing with the team
-        "dark_mask_counter":  5,   # adversarial challenge delivered
-        "mission_complete":   3,   # just showing up (barely anything)
+        "coal_to_diamond": 20,  # signature move — best EXP
+        "validation": 15,  # confirming others' work
+        "council_opinion": 10,  # contributing wisdom
+        "shared_discovery": 8,  # sharing with the team
+        "dark_mask_counter": 5,  # adversarial challenge delivered
+        "mission_complete": 3,  # just showing up (barely anything)
     }
 
     def _legendary_data(self):
         """Get or init legendary data store."""
-        return self.db.setdefault("legendary", {
-            "members": {},   # name → {exp, level, crown, sigil, inducted, history}
-            "hall": [],      # timeline of ascensions
-        })
+        return self.db.setdefault(
+            "legendary",
+            {
+                "members": {},  # name → {exp, level, crown, sigil, inducted, history}
+                "hall": [],  # timeline of ascensions
+            },
+        )
 
     def _legendary_level(self, exp):
         """Calculate legendary level from EXP."""
@@ -1096,11 +1322,13 @@ class Brain:
             "inducted": self._ts(),
             "history": [],
         }
-        ld["hall"].append({
-            "name": name,
-            "event": "inducted",
-            "ts": self._ts(),
-        })
+        ld["hall"].append(
+            {
+                "name": name,
+                "event": "inducted",
+                "ts": self._ts(),
+            }
+        )
 
         hood = seats.get(name, {}).get("hood", "Unknown")
         print(f"\n  {C.MAGENTA}{C.BOLD}{'═' * 55}{C.RESET}")
@@ -1138,22 +1366,26 @@ class Brain:
         member["crown"] = crown
         member["sigil"] = sigil
 
-        member["history"].append({
-            "source": source,
-            "exp": earned,
-            "total": member["exp"],
-            "ts": self._ts(),
-        })
+        member["history"].append(
+            {
+                "source": source,
+                "exp": earned,
+                "total": member["exp"],
+                "ts": self._ts(),
+            }
+        )
 
         # Level up?
         if new_level > old_level:
-            ld["hall"].append({
-                "name": name,
-                "event": f"level_up_{new_level}",
-                "crown": crown,
-                "sigil": sigil,
-                "ts": self._ts(),
-            })
+            ld["hall"].append(
+                {
+                    "name": name,
+                    "event": f"level_up_{new_level}",
+                    "crown": crown,
+                    "sigil": sigil,
+                    "ts": self._ts(),
+                }
+            )
             print(f"\n  {C.MAGENTA}{C.BOLD}{'═' * 55}{C.RESET}")
             print(f"  {C.MAGENTA}{C.BOLD}  {sigil} LEGENDARY LEVEL UP! {sigil}{C.RESET}")
             print(f"  {C.BOLD}{name}{C.RESET} → {C.MAGENTA}{C.BOLD}{crown}{C.RESET} {sigil}")
@@ -1169,8 +1401,10 @@ class Brain:
             progress = ""
             if nxt:
                 progress = f" ({nxt} EXP to next)"
-            print(f"  {C.MAGENTA}{sigil}{C.RESET} {C.BOLD}{name}{C.RESET} "
-                  f"+{earned} EXP ({source}) → {member['exp']} total{progress}")
+            print(
+                f"  {C.MAGENTA}{sigil}{C.RESET} {C.BOLD}{name}{C.RESET} "
+                f"+{earned} EXP ({source}) → {member['exp']} total{progress}"
+            )
 
         self.save()
         return earned
@@ -1186,7 +1420,7 @@ class Brain:
 
         w = 60
         print(f"\n{C.MAGENTA}{C.BOLD}{'═' * w}")
-        print(f"  ♚ THE ETERNAL KINGDOM — LEGENDARY TIER ♚")
+        print("  ♚ THE ETERNAL KINGDOM — LEGENDARY TIER ♚")
         print(f"{'═' * w}{C.RESET}")
 
         targets = {name: members[name]} if name and name in members else members
@@ -1233,7 +1467,7 @@ class Brain:
                 if event == "inducted":
                     print(f"  {C.DIM}· {entry['name']} entered the Eternal Kingdom{C.RESET}")
                 else:
-                    print(f"  {C.DIM}· {entry['name']} → {entry.get('sigil','')} {entry.get('crown','')}{C.RESET}")
+                    print(f"  {C.DIM}· {entry['name']} → {entry.get('sigil', '')} {entry.get('crown', '')}{C.RESET}")
 
         print(f"\n{C.MAGENTA}{C.BOLD}{'═' * w}{C.RESET}")
 
@@ -1267,20 +1501,23 @@ class Brain:
     #
 
     _VAULT_NAMES = {
-        "council":   ("Council Vault",     "⚜️", C.YELLOW),
-        "shiny":     ("Shiny Archive",     "✨", C.GREEN),
-        "dark_mask": ("Dark Codex",        "🎭", C.RED),
-        "legendary": ("Eternal Grimoire",  "♚", C.MAGENTA),
+        "council": ("Council Vault", "⚜️", C.YELLOW),
+        "shiny": ("Shiny Archive", "✨", C.GREEN),
+        "dark_mask": ("Dark Codex", "🎭", C.RED),
+        "legendary": ("Eternal Grimoire", "♚", C.MAGENTA),
     }
 
     def _vault_data(self):
         """Get or init all vaults."""
-        return self.db.setdefault("vaults", {
-            "council": [],    # [{author, text, ts}]
-            "shiny": [],
-            "dark_mask": [],
-            "legendary": [],
-        })
+        return self.db.setdefault(
+            "vaults",
+            {
+                "council": [],  # [{author, text, ts}]
+                "shiny": [],
+                "dark_mask": [],
+                "legendary": [],
+            },
+        )
 
     def _agent_group(self, name):
         """Determine which groups an agent belongs to. Returns set of group keys."""
@@ -1403,9 +1640,8 @@ class Brain:
         entry = random.choice(entries)
         vname, icon, color = self._VAULT_NAMES[target]
 
-        print(f"  {color}{icon}{C.RESET} {C.BOLD}{agent_name}{C.RESET} "
-              f"{C.DIM}(from {vname}):{C.RESET}")
-        print(f"  {C.WHITE}{C.BOLD}\"{entry['text'][:100]}\"{C.RESET}")
+        print(f"  {color}{icon}{C.RESET} {C.BOLD}{agent_name}{C.RESET} {C.DIM}(from {vname}):{C.RESET}")
+        print(f'  {C.WHITE}{C.BOLD}"{entry["text"][:100]}"{C.RESET}')
         print(f"  {C.DIM}[vault knowledge — shared verbally, not copied]{C.RESET}")
 
         return entry["text"]
@@ -1415,15 +1651,16 @@ class Brain:
         vaults = self._vault_data()
         w = 50
         print(f"\n  {C.CYAN}{C.BOLD}{'─' * w}")
-        print(f"  KNOWLEDGE VAULTS — COMPARTMENTALIZED")
+        print("  KNOWLEDGE VAULTS — COMPARTMENTALIZED")
         print(f"  {'─' * w}{C.RESET}")
 
         for group_key in ["council", "shiny", "dark_mask", "legendary"]:
             vname, icon, color = self._VAULT_NAMES[group_key]
             entries = vaults.get(group_key, [])
             authors = set(e["author"] for e in entries)
-            print(f"  {color}{icon} {C.BOLD}{vname:<22}{C.RESET} "
-                  f"{len(entries):>3} entries │ {len(authors)} contributors")
+            print(
+                f"  {color}{icon} {C.BOLD}{vname:<22}{C.RESET} {len(entries):>3} entries │ {len(authors)} contributors"
+            )
 
         total = sum(len(v) for v in vaults.values())
         print(f"  {C.GRAY}{'─' * w}{C.RESET}")
@@ -1439,7 +1676,7 @@ class Brain:
         # ── Council of 6 ──
         seats = cd.get("seats", {})
         print(f"\n{C.YELLOW}{C.BOLD}{'═' * w}")
-        print(f"  ⚜️  THE COUNCIL OF 6  ⚜️")
+        print("  ⚜️  THE COUNCIL OF 6  ⚜️")
         print(f"{'═' * w}{C.RESET}")
 
         if not seats:
@@ -1460,9 +1697,9 @@ class Brain:
                 print(f"  {C.BOLD}{name}{C.RESET} {C.YELLOW}{'★' * min(5, missions // 2)}{C.RESET}")
                 print(f"  {C.DIM}Traits: {traits} │ Missions: {missions} │ Score: {seat['score']:.0f}{C.RESET}")
                 if p.get("catchphrase"):
-                    print(f"  {C.WHITE}\"{p['catchphrase']}\"{C.RESET}")
+                    print(f'  {C.WHITE}"{p["catchphrase"]}"{C.RESET}')
                 if seat.get("opinions"):
-                    print(f"  {C.DIM}Last opinion: \"{seat['opinions'][-1][:60]}\"{C.RESET}")
+                    print(f'  {C.DIM}Last opinion: "{seat["opinions"][-1][:60]}"{C.RESET}')
 
         # ── Shinies ──
         shinies = cd.get("shinies", {})
@@ -1473,8 +1710,10 @@ class Brain:
                 leg = legends.get(name, {})
                 p = leg.get("personality", {})
                 traits = " + ".join(p.get("traits", []))
-                print(f"  ✨ {C.GREEN}{C.BOLD}{s['title']}{C.RESET} {name} "
-                      f"{C.DIM}({traits} │ score: {s['score']:.0f}){C.RESET}")
+                print(
+                    f"  ✨ {C.GREEN}{C.BOLD}{s['title']}{C.RESET} {name} "
+                    f"{C.DIM}({traits} │ score: {s['score']:.0f}){C.RESET}"
+                )
 
         # ── Dark Masks ──
         masks = cd.get("dark_masks", {})
@@ -1485,8 +1724,9 @@ class Brain:
                 leg = legends.get(name, {})
                 p = leg.get("personality", {})
                 counters = m.get("counters_given", 0)
-                print(f"  🎭 {C.RED}{C.BOLD}{m['mask']}{C.RESET} ({name}) "
-                      f"{C.DIM}│ {counters} counters delivered{C.RESET}")
+                print(
+                    f"  🎭 {C.RED}{C.BOLD}{m['mask']}{C.RESET} ({name}) {C.DIM}│ {counters} counters delivered{C.RESET}"
+                )
 
         print(f"\n{C.YELLOW}{C.BOLD}{'═' * w}{C.RESET}")
 
@@ -1511,7 +1751,7 @@ class Brain:
 
         w = 60
         print(f"\n  {C.CYAN}{C.BOLD}{'─' * w}")
-        print(f"  COUNCIL DELIBERATION")
+        print("  COUNCIL DELIBERATION")
         print(f"  {'─' * w}{C.RESET}")
         print(f"  {C.DIM}Topic: {topic[:80]}{C.RESET}\n")
 
@@ -1551,7 +1791,7 @@ class Brain:
             for name, m in masks.items():
                 counter = random.choice(self._ANTI_WISDOM)
                 m["counters_given"] = m.get("counters_given", 0) + 1
-                print(f"  {C.RED}🎭 {m['mask']}{C.RESET} ({name}): {C.WHITE}\"{counter}\"{C.RESET}")
+                print(f'  {C.RED}🎭 {m["mask"]}{C.RESET} ({name}): {C.WHITE}"{counter}"{C.RESET}')
 
         self.save()
 
@@ -1575,7 +1815,7 @@ class Brain:
         print(f"\n  {C.RED}{C.BOLD}🎭 DARK MASK CHALLENGES:{C.RESET}")
         print(f"  {C.DIM}Finding: {finding[:70]}{C.RESET}")
         print(f"  {C.RED}🎭 {m['mask']}{C.RESET} ({C.BOLD}{name}{C.RESET}):")
-        print(f"  {C.WHITE}{C.BOLD}\"{counter}\"{C.RESET}")
+        print(f'  {C.WHITE}{C.BOLD}"{counter}"{C.RESET}')
 
         # Legendary EXP for dark mask counter
         self._legendary_exp_hook(name, "dark_mask_counter")
@@ -1617,10 +1857,16 @@ class Brain:
         # Stats line
         s = stats
         total_secs = s.get("total_time_secs", 0)
-        total_time = f"{total_secs // 60}m{total_secs % 60}s" if total_secs < 3600 else f"{total_secs // 3600}h{(total_secs % 3600) // 60}m"
-        print(f"\n  {C.DIM}Spawned: {s.get('total_spawned',0)} | Done: {s.get('total_completed',0)} | "
-              f"Failed: {s.get('total_failed',0)} | Killed: {s.get('total_killed',0)} | "
-              f"Peak: {s.get('peak_concurrent',0)} | Total Time: {total_time}{C.RESET}")
+        total_time = (
+            f"{total_secs // 60}m{total_secs % 60}s"
+            if total_secs < 3600
+            else f"{total_secs // 3600}h{(total_secs % 3600) // 60}m"
+        )
+        print(
+            f"\n  {C.DIM}Spawned: {s.get('total_spawned', 0)} | Done: {s.get('total_completed', 0)} | "
+            f"Failed: {s.get('total_failed', 0)} | Killed: {s.get('total_killed', 0)} | "
+            f"Peak: {s.get('peak_concurrent', 0)} | Total Time: {total_time}{C.RESET}"
+        )
 
     def agent_stats(self):
         """Quick agent statistics."""
@@ -1631,9 +1877,11 @@ class Brain:
             return s
         done = s.get("total_completed", 0)
         rate = done / total * 100 if total else 0
-        print(f"  {C.CYAN}Agents:{C.RESET} {total} spawned | {done} completed ({rate:.0f}%) | "
-              f"{s.get('total_failed',0)} failed | {s.get('total_killed',0)} killed | "
-              f"Peak: {s.get('peak_concurrent',0)} concurrent")
+        print(
+            f"  {C.CYAN}Agents:{C.RESET} {total} spawned | {done} completed ({rate:.0f}%) | "
+            f"{s.get('total_failed', 0)} failed | {s.get('total_killed', 0)} killed | "
+            f"Peak: {s.get('peak_concurrent', 0)} concurrent"
+        )
         return s
 
     # ═══════════════════════════════════════════════════════
@@ -1695,32 +1943,32 @@ class Brain:
     ]
 
     _BADGES = {
-        "first_blood":    ("🩸", "First Blood",     "First completed task"),
-        "speed_demon":    ("⚡", "Speed Demon",     "Completed in under 5s"),
-        "diamond_hands":  ("💎", "Diamond Hands",   "Turned coal into diamond"),
-        "gold_rush":      ("🥇", "Gold Rush",       "Found 3+ gold nuggets"),
-        "eagle_eye":      ("🦅", "Eagle Eye",       "Found critical intel"),
-        "ghost":          ("👻", "Ghost",           "Completed without errors"),
-        "workhorse":      ("🐎", "Workhorse",       "10+ tasks completed"),
-        "veteran":        ("🎖️", "Veteran",         "50+ tasks completed"),
-        "legend":         ("👑", "Legend",           "100+ tasks completed"),
-        "perfectionist":  ("✨", "Perfectionist",   "5 diamonds in a row"),
-        "explorer":       ("🗺️", "Explorer",        "Worked 5+ different roles"),
-        "night_owl":      ("🦉", "Night Owl",       "Active past midnight"),
-        "marathon":       ("🏃", "Marathon",         "Single task over 10min"),
-        "combo_breaker":  ("🔥", "Combo Breaker",   "3 discoveries in one session"),
-        "the_forge":      ("🔨", "The Forge",       "Forged 10+ diamonds"),
+        "first_blood": ("🩸", "First Blood", "First completed task"),
+        "speed_demon": ("⚡", "Speed Demon", "Completed in under 5s"),
+        "diamond_hands": ("💎", "Diamond Hands", "Turned coal into diamond"),
+        "gold_rush": ("🥇", "Gold Rush", "Found 3+ gold nuggets"),
+        "eagle_eye": ("🦅", "Eagle Eye", "Found critical intel"),
+        "ghost": ("👻", "Ghost", "Completed without errors"),
+        "workhorse": ("🐎", "Workhorse", "10+ tasks completed"),
+        "veteran": ("🎖️", "Veteran", "50+ tasks completed"),
+        "legend": ("👑", "Legend", "100+ tasks completed"),
+        "perfectionist": ("✨", "Perfectionist", "5 diamonds in a row"),
+        "explorer": ("🗺️", "Explorer", "Worked 5+ different roles"),
+        "night_owl": ("🦉", "Night Owl", "Active past midnight"),
+        "marathon": ("🏃", "Marathon", "Single task over 10min"),
+        "combo_breaker": ("🔥", "Combo Breaker", "3 discoveries in one session"),
+        "the_forge": ("🔨", "The Forge", "Forged 10+ diamonds"),
     }
 
     _AGENT_RANKS = [
-        (0,   "Recruit"),
-        (50,  "Operative"),
+        (0, "Recruit"),
+        (50, "Operative"),
         (150, "Specialist"),
         (300, "Elite"),
         (500, "Ace"),
         (800, "Shadow"),
-        (1200,"Legend"),
-        (2000,"Mythic"),
+        (1200, "Legend"),
+        (2000, "Mythic"),
     ]
 
     def _forge_init(self):
@@ -1774,13 +2022,17 @@ class Brain:
         art = self._DISCOVERY_ART.get(kind, self._DISCOVERY_ART["insight"])
         shout = random.choice(self._SHOUT_LINES)
         print(art)
-        print(f"\n  {C.GREEN}{C.BOLD}{label}:{C.RESET} \"{C.WHITE}{shout}{C.RESET}\"")
+        print(f'\n  {C.GREEN}{C.BOLD}{label}:{C.RESET} "{C.WHITE}{shout}{C.RESET}"')
         print(f"  {C.CYAN}>{C.RESET} {message}")
 
         # Award shards based on discovery type
         shard_values = {
-            "diamond": 50, "gold": 25, "critical": 40,
-            "exploit": 45, "easter_egg": 15, "insight": 10,
+            "diamond": 50,
+            "gold": 25,
+            "critical": 40,
+            "exploit": 45,
+            "easter_egg": 15,
+            "insight": 10,
         }
         shards = shard_values.get(kind, 10)
 
@@ -1845,7 +2097,7 @@ class Brain:
         print(f"\n  {C.BOLD}{label} FORGED A DIAMOND{C.RESET}")
         print(f"  {C.GRAY}Coal:{C.RESET}    {coal_desc}")
         print(f"  {C.CYAN}Diamond:{C.RESET} {C.BOLD}{C.WHITE}{diamond_desc}{C.RESET}")
-        print(f"  {C.YELLOW}\"{random.choice(self._SHOUT_LINES)}\"{C.RESET}")
+        print(f'  {C.YELLOW}"{random.choice(self._SHOUT_LINES)}"{C.RESET}')
 
         # Diamond is worth the most
         self.agent_shout.__func__  # avoid recursion - do it inline
@@ -1937,11 +2189,13 @@ class Brain:
         for badge_key in new_badges:
             emoji, title, desc = self._BADGES[badge_key]
             scores.setdefault("badges", []).append(badge_key)
-            forge["badges_earned"].append({
-                "badge": badge_key,
-                "agent_id": agent_id,
-                "timestamp": self._ts(),
-            })
+            forge["badges_earned"].append(
+                {
+                    "badge": badge_key,
+                    "agent_id": agent_id,
+                    "timestamp": self._ts(),
+                }
+            )
             print(f"\n  {C.YELLOW}{C.BOLD}🏅 BADGE UNLOCKED!{C.RESET}")
             print(f"  {emoji} {C.BOLD}{title}{C.RESET} — {desc}")
 
@@ -1954,7 +2208,9 @@ class Brain:
             s = scores[agent_id]
             rank = self._agent_rank(s["shards"])
             print(f"\n  {C.CYAN}{C.BOLD}LOOT — {s['name']}{C.RESET}")
-            print(f"  Shards: {C.YELLOW}{s['shards']}{C.RESET} | Rank: {C.BOLD}{rank}{C.RESET} | Discoveries: {s['discoveries']}")
+            print(
+                f"  Shards: {C.YELLOW}{s['shards']}{C.RESET} | Rank: {C.BOLD}{rank}{C.RESET} | Discoveries: {s['discoveries']}"
+            )
             if s.get("badges"):
                 badge_str = " ".join(self._BADGES[b][0] for b in s["badges"] if b in self._BADGES)
                 print(f"  Badges: {badge_str}")
@@ -1968,7 +2224,9 @@ class Brain:
         for aid, s in sorted(scores.items(), key=lambda x: -x[1]["shards"]):
             rank = self._agent_rank(s["shards"])
             badges = " ".join(self._BADGES[b][0] for b in s.get("badges", []) if b in self._BADGES)
-            print(f"  {C.YELLOW}{s['shards']:>5} shards{C.RESET} │ {s['name']:<20} │ {C.BOLD}{rank:<10}{C.RESET} │ {s['discoveries']} finds │ {badges}")
+            print(
+                f"  {C.YELLOW}{s['shards']:>5} shards{C.RESET} │ {s['name']:<20} │ {C.BOLD}{rank:<10}{C.RESET} │ {s['discoveries']} finds │ {badges}"
+            )
 
     def forge_leaderboard(self):
         """Competitive leaderboard across all agents, all time."""
@@ -1983,10 +2241,12 @@ class Brain:
         w = 72
 
         print(f"\n{C.YELLOW}{C.BOLD}{'═' * w}")
-        print(f"  🔨 THE FORGE — LEADERBOARD")
+        print("  🔨 THE FORGE — LEADERBOARD")
         print(f"{'═' * w}{C.RESET}")
-        print(f"  {C.DIM}Diamonds: {forge['total_diamonds']} | Gold: {forge['total_gold']} | "
-              f"Total Shards: {forge['total_shards']} | Discoveries: {len(forge['discoveries'])}{C.RESET}")
+        print(
+            f"  {C.DIM}Diamonds: {forge['total_diamonds']} | Gold: {forge['total_gold']} | "
+            f"Total Shards: {forge['total_shards']} | Discoveries: {len(forge['discoveries'])}{C.RESET}"
+        )
         print(f"  {C.GRAY}{'─' * (w - 4)}{C.RESET}")
 
         for i, (aid, s) in enumerate(ranked[:10], 1):
@@ -1997,16 +2257,24 @@ class Brain:
             bar_len = min(20, int(s["shards"] / max(1, ranked[0][1]["shards"]) * 20))
             bar = f"{'█' * bar_len}{'░' * (20 - bar_len)}"
 
-            print(f"  {medal} {C.BOLD}{s['name']:<18}{C.RESET} {C.YELLOW}{bar}{C.RESET} "
-                  f"{s['shards']:>5} shards │ {C.BOLD}{rank:<10}{C.RESET} │ {badges}")
+            print(
+                f"  {medal} {C.BOLD}{s['name']:<18}{C.RESET} {C.YELLOW}{bar}{C.RESET} "
+                f"{s['shards']:>5} shards │ {C.BOLD}{rank:<10}{C.RESET} │ {badges}"
+            )
 
         # Recent discoveries ticker
         recent = forge["discoveries"][-5:]
         if recent:
             print(f"\n  {C.CYAN}{C.BOLD}RECENT DISCOVERIES:{C.RESET}")
             for d in reversed(recent):
-                kind_icon = {"diamond": "💎", "gold": "🥇", "critical": "🚨",
-                             "exploit": "💀", "easter_egg": "🥚", "insight": "💡"}.get(d["kind"], "?")
+                kind_icon = {
+                    "diamond": "💎",
+                    "gold": "🥇",
+                    "critical": "🚨",
+                    "exploit": "💀",
+                    "easter_egg": "🥚",
+                    "insight": "💡",
+                }.get(d["kind"], "?")
                 print(f"  {kind_icon} {C.DIM}{d['timestamp'][11:19]}{C.RESET} {d['agent_name']}: {d['message'][:50]}")
 
         print(f"{C.YELLOW}{C.BOLD}{'═' * w}{C.RESET}\n")
@@ -2015,11 +2283,13 @@ class Brain:
         """Quick forge statistics."""
         forge = self._forge_init()
         s = forge
-        print(f"  {C.YELLOW}Forge:{C.RESET} {s['total_shards']} shards | "
-              f"💎 {s['total_diamonds']} diamonds | 🥇 {s['total_gold']} gold | "
-              f"{len(s['discoveries'])} discoveries | "
-              f"🏅 {len(s['badges_earned'])} badges earned | "
-              f"🔥 {s.get('streak', 0)} streak")
+        print(
+            f"  {C.YELLOW}Forge:{C.RESET} {s['total_shards']} shards | "
+            f"💎 {s['total_diamonds']} diamonds | 🥇 {s['total_gold']} gold | "
+            f"{len(s['discoveries'])} discoveries | "
+            f"🏅 {len(s['badges_earned'])} badges earned | "
+            f"🔥 {s.get('streak', 0)} streak"
+        )
 
     # ═══════════════════════════════════════════════════════
     # SHARING, CO-OP, VALIDATION — Biggest rewards
@@ -2059,7 +2329,9 @@ class Brain:
         rank = self._agent_rank(scores["shards"]) if scores else "?"
         print(f"\n  {C.MAGENTA}{C.BOLD}📢 SHARED DISCOVERY{C.RESET} (importance: {'⭐' * importance})")
         print(f"  {C.CYAN}{d['agent_name']}:{C.RESET} {d['message'][:80]}")
-        print(f"  {C.YELLOW}+{share_shards} shards{C.RESET} for sharing (importance {importance}/10) → {C.BOLD}{rank}{C.RESET}")
+        print(
+            f"  {C.YELLOW}+{share_shards} shards{C.RESET} for sharing (importance {importance}/10) → {C.BOLD}{rank}{C.RESET}"
+        )
         print(f"  {C.DIM}Awaiting validation from other agents...{C.RESET}")
 
         # Legendary EXP for sharing
@@ -2107,16 +2379,18 @@ class Brain:
 
         if confirmed:
             # CO-OP VALIDATION — the biggest reward in the game
-            validator_shards = importance * 8   # validator gets huge reward
-            original_bonus = importance * 6     # original finder gets co-op bonus
+            validator_shards = importance * 8  # validator gets huge reward
+            original_bonus = importance * 6  # original finder gets co-op bonus
 
-            d.setdefault("validators", []).append({
-                "agent_id": validator_id,
-                "name": validator["name"],
-                "confirmed": True,
-                "notes": notes,
-                "timestamp": self._ts(),
-            })
+            d.setdefault("validators", []).append(
+                {
+                    "agent_id": validator_id,
+                    "name": validator["name"],
+                    "confirmed": True,
+                    "notes": notes,
+                    "timestamp": self._ts(),
+                }
+            )
             d["validated"] = True
 
             # Award validator
@@ -2150,13 +2424,15 @@ class Brain:
         else:
             # Disputed — small reward for diligence, no penalty to original
             dispute_shards = 5
-            d.setdefault("validators", []).append({
-                "agent_id": validator_id,
-                "name": validator["name"],
-                "confirmed": False,
-                "notes": notes,
-                "timestamp": self._ts(),
-            })
+            d.setdefault("validators", []).append(
+                {
+                    "agent_id": validator_id,
+                    "name": validator["name"],
+                    "confirmed": False,
+                    "notes": notes,
+                    "timestamp": self._ts(),
+                }
+            )
 
             scores = forge.setdefault("agent_scores", {})
             if validator_id not in scores:
@@ -2165,7 +2441,9 @@ class Brain:
             forge["total_shards"] += dispute_shards
 
             print(f"\n  {C.YELLOW}{C.BOLD}⚠️ DISPUTED{C.RESET}")
-            print(f"  {C.CYAN}{validator['name']}{C.RESET} questions {C.CYAN}{d.get('agent_name', '?')}'s{C.RESET} finding")
+            print(
+                f"  {C.CYAN}{validator['name']}{C.RESET} questions {C.CYAN}{d.get('agent_name', '?')}'s{C.RESET} finding"
+            )
             if notes:
                 print(f"  {C.DIM}Reason: {notes}{C.RESET}")
             print(f"  {C.YELLOW}+{dispute_shards} shards{C.RESET} for due diligence")
@@ -2185,14 +2463,22 @@ class Brain:
         print(f"  {C.GRAY}{'─' * 60}{C.RESET}")
 
         for d in reversed(discoveries):
-            kind_icon = {"diamond": "💎", "gold": "🥇", "critical": "🚨",
-                         "exploit": "💀", "easter_egg": "🥚", "insight": "💡"}.get(d["kind"], "?")
+            kind_icon = {
+                "diamond": "💎",
+                "gold": "🥇",
+                "critical": "🚨",
+                "exploit": "💀",
+                "easter_egg": "🥚",
+                "insight": "💡",
+            }.get(d["kind"], "?")
             shared = " 📢" if d.get("shared") else ""
             validated = f" {C.GREEN}✅{C.RESET}" if d.get("validated") else ""
             imp = f" {'⭐' * d['importance']}" if d.get("importance") else ""
-            print(f"  {kind_icon} {C.DIM}{d['timestamp'][11:19]}{C.RESET} "
-                  f"{C.BOLD}{d['agent_name']}{C.RESET}: {d['message'][:45]}"
-                  f"{shared}{validated}{imp} {C.YELLOW}+{d['shards']}{C.RESET}")
+            print(
+                f"  {kind_icon} {C.DIM}{d['timestamp'][11:19]}{C.RESET} "
+                f"{C.BOLD}{d['agent_name']}{C.RESET}: {d['message'][:45]}"
+                f"{shared}{validated}{imp} {C.YELLOW}+{d['shards']}{C.RESET}"
+            )
 
     # ═══════════════════════════════════════════════════════
     # PERSONALITY — Emerges at Level 40
@@ -2207,27 +2493,45 @@ class Brain:
 
     _TRAIT_AXES = [
         # (axis_name, positive_pole, negative_pole, topic_signals_positive, topic_signals_negative)
-        ("approach",   "Methodical",  "Impulsive",   ["workflow","algorithms","optimization"], ["bypass","exploit"]),
-        ("focus",      "Offensive",   "Defensive",   ["bypass","exploit","windows","tunneling"], ["workflow","system","python"]),
-        ("style",      "Verbose",     "Terse",       ["printing","ascii_art","layout","ansi_art"], ["optimization","algorithms"]),
-        ("curiosity",  "Explorer",    "Specialist",  [], []),  # derived from topic count
-        ("social",     "Pack Hunter", "Lone Wolf",   [], []),  # derived from agent co-op stats
-        ("grit",       "Diamond Hands","Paper Hands", [], []),  # derived from task completion rate
+        ("approach", "Methodical", "Impulsive", ["workflow", "algorithms", "optimization"], ["bypass", "exploit"]),
+        (
+            "focus",
+            "Offensive",
+            "Defensive",
+            ["bypass", "exploit", "windows", "tunneling"],
+            ["workflow", "system", "python"],
+        ),
+        ("style", "Verbose", "Terse", ["printing", "ascii_art", "layout", "ansi_art"], ["optimization", "algorithms"]),
+        ("curiosity", "Explorer", "Specialist", [], []),  # derived from topic count
+        ("social", "Pack Hunter", "Lone Wolf", [], []),  # derived from agent co-op stats
+        ("grit", "Diamond Hands", "Paper Hands", [], []),  # derived from task completion rate
     ]
 
     _VOICE_TEMPLATES = {
         # Combinations that produce distinct voice flavors
-        "offensive_methodical":  ("calculated predator",  "Plans the kill like a chess grandmaster who also knows karate."),
-        "offensive_impulsive":   ("chaos gremlin",        "Kicks in the door, yells 'SURPRISE', figures out the rest mid-air."),
-        "defensive_methodical":  ("paranoiac architect",  "Builds walls that have walls. Trusts no one. Not even the walls."),
-        "defensive_impulsive":   ("caffeinated firefighter", "Responds at wire speed. Sleeps when the servers sleep. So never."),
-        "explorer_verbose":      ("unhinged cartographer", "Maps EVERYTHING. Finds a new port, writes a sonnet about it."),
-        "specialist_terse":      ("laser surgeon",        "One tool. One cut. If you blinked, you missed it. You're welcome."),
-        "pack_hunter_diamond_hands": ("forge master",     "Turns teams into wolves and coal into diamonds. Then celebrates."),
-        "lone_wolf_diamond_hands":   ("silent blade",     "Works alone. Delivers results. Vanishes. Legend grows."),
-        "explorer_explorer":     ("ADHD cartographer",    "Ooh what's that? And THAT? 47 tabs open. All relevant somehow."),
-        "offensive_terse":       ("digital assassin",     "root@target:~# Done."),
-        "defensive_verbose":     ("security bard",        "Sings the saga of every CVE patched. In iambic pentameter."),
+        "offensive_methodical": (
+            "calculated predator",
+            "Plans the kill like a chess grandmaster who also knows karate.",
+        ),
+        "offensive_impulsive": ("chaos gremlin", "Kicks in the door, yells 'SURPRISE', figures out the rest mid-air."),
+        "defensive_methodical": (
+            "paranoiac architect",
+            "Builds walls that have walls. Trusts no one. Not even the walls.",
+        ),
+        "defensive_impulsive": (
+            "caffeinated firefighter",
+            "Responds at wire speed. Sleeps when the servers sleep. So never.",
+        ),
+        "explorer_verbose": ("unhinged cartographer", "Maps EVERYTHING. Finds a new port, writes a sonnet about it."),
+        "specialist_terse": ("laser surgeon", "One tool. One cut. If you blinked, you missed it. You're welcome."),
+        "pack_hunter_diamond_hands": (
+            "forge master",
+            "Turns teams into wolves and coal into diamonds. Then celebrates.",
+        ),
+        "lone_wolf_diamond_hands": ("silent blade", "Works alone. Delivers results. Vanishes. Legend grows."),
+        "explorer_explorer": ("ADHD cartographer", "Ooh what's that? And THAT? 47 tabs open. All relevant somehow."),
+        "offensive_terse": ("digital assassin", "root@target:~# Done."),
+        "defensive_verbose": ("security bard", "Sings the saga of every CVE patched. In iambic pentameter."),
     }
 
     # Personality rule: wacky in creative mode, disciplined in work mode
@@ -2268,7 +2572,9 @@ class Brain:
         traits = {}
 
         # Approach: Methodical vs Impulsive — based on knowledge distribution
-        method_score = sum(topic_counts.get(t, 0) for t in ["workflow", "algorithms", "optimization", "data_structures"])
+        method_score = sum(
+            topic_counts.get(t, 0) for t in ["workflow", "algorithms", "optimization", "data_structures"]
+        )
         impulse_score = sum(topic_counts.get(t, 0) for t in ["bypass", "exploit", "tunneling"])
         if method_score + impulse_score > 0:
             ratio = method_score / (method_score + impulse_score)
@@ -2310,7 +2616,9 @@ class Brain:
         total_discoveries = len(forge.get("discoveries", []))
         if total_discoveries > 0:
             coop_ratio = validations / total_discoveries
-            traits["social"] = ("Pack Hunter", min(1.0, coop_ratio * 2)) if coop_ratio > 0.2 else ("Lone Wolf", 1 - coop_ratio)
+            traits["social"] = (
+                ("Pack Hunter", min(1.0, coop_ratio * 2)) if coop_ratio > 0.2 else ("Lone Wolf", 1 - coop_ratio)
+            )
         else:
             traits["social"] = ("Lone Wolf", 0.6)
 
@@ -2347,7 +2655,10 @@ class Brain:
 
         # Fallback — pick based on strongest trait
         strongest = max(traits.items(), key=lambda x: x[1][1])
-        return (strongest[1][0].lower(), f"Defined by {strongest[0]}: {strongest[1][0]} at {strongest[1][1]:.0%} strength.")
+        return (
+            strongest[1][0].lower(),
+            f"Defined by {strongest[0]}: {strongest[1][0]} at {strongest[1][1]:.0%} strength.",
+        )
 
     def _generate_name(self, traits):
         """Generate a wacky personality name from traits."""
@@ -2415,7 +2726,7 @@ class Brain:
             self.save()
 
             print(f"\n{C.YELLOW}{C.BOLD}{'═' * 60}")
-            print(f"  ⚡ PERSONALITY AWAKENED ⚡")
+            print("  ⚡ PERSONALITY AWAKENED ⚡")
             print(f"{'═' * 60}{C.RESET}")
             print(f"""
   {C.CYAN}{C.BOLD}    .  *  .          *
@@ -2426,7 +2737,7 @@ class Brain:
         .    *    .{C.RESET}
 """)
             print(f"  {C.WHITE}{C.BOLD}I am {C.CYAN}{p['name']}{C.RESET}")
-            print(f"  {C.YELLOW}\"{p['tagline']}\"{C.RESET}")
+            print(f'  {C.YELLOW}"{p["tagline"]}"{C.RESET}')
             print(f"  {C.DIM}Voice archetype: {voice_name}{C.RESET}")
         else:
             # Update traits (personality evolves)
@@ -2439,10 +2750,13 @@ class Brain:
             for axis, new in traits.items():
                 old = old_traits.get(axis, {})
                 if old and old.get("pole") != new[0]:
-                    p["evolved_at"].append({
-                        "level": lvl, "timestamp": self._ts(),
-                        "event": f"{axis} shifted: {old.get('pole')} → {new[0]}"
-                    })
+                    p["evolved_at"].append(
+                        {
+                            "level": lvl,
+                            "timestamp": self._ts(),
+                            "event": f"{axis} shifted: {old.get('pole')} → {new[0]}",
+                        }
+                    )
 
             self.save()
 
@@ -2451,7 +2765,7 @@ class Brain:
             print(f"\n{C.CYAN}{C.BOLD}{'═' * w}")
             print(f"  🧬 {p['name']} — Personality Profile")
             print(f"{'═' * w}{C.RESET}")
-            print(f"  {C.YELLOW}\"{p['tagline']}\"{C.RESET}")
+            print(f'  {C.YELLOW}"{p["tagline"]}"{C.RESET}')
             print(f"  {C.DIM}Voice: {voice_name} | Level {lvl}{C.RESET}")
 
         # Trait display (always shown)
@@ -2461,14 +2775,13 @@ class Brain:
             bar_len = int(strength * 20)
             color = C.GREEN if strength >= 0.7 else C.YELLOW if strength >= 0.4 else C.CYAN
             bar = f"{'█' * bar_len}{'░' * (20 - bar_len)}"
-            print(f"  {C.WHITE}{axis:<12}{C.RESET} {color}{bar}{C.RESET} {C.BOLD}{pole}{C.RESET} {C.DIM}({strength:.0%}){C.RESET}")
+            print(
+                f"  {C.WHITE}{axis:<12}{C.RESET} {color}{bar}{C.RESET} {C.BOLD}{pole}{C.RESET} {C.DIM}({strength:.0%}){C.RESET}"
+            )
 
         # Opinions — derived from knowledge weight
         facts = self.db.get("facts", {})
-        topic_counts = sorted(
-            [(t, len(f)) for t, f in facts.items()],
-            key=lambda x: -x[1]
-        )
+        topic_counts = sorted([(t, len(f)) for t, f in facts.items()], key=lambda x: -x[1])
         print(f"\n  {C.WHITE}{C.BOLD}OPINIONS{C.RESET} {C.DIM}(what I care about most){C.RESET}")
         print(f"  {C.GRAY}{'─' * 50}{C.RESET}")
         for topic, count in topic_counts[:5]:
@@ -2502,10 +2815,9 @@ class Brain:
             if not facts:
                 warning(f"No knowledge on topic: {topic}")
                 return []
-            facts = sorted(
-                [f for f in facts if f["confidence"] >= min_confidence],
-                key=lambda x: -x["confidence"]
-            )[:cap]
+            facts = sorted([f for f in facts if f["confidence"] >= min_confidence], key=lambda x: -x["confidence"])[
+                :cap
+            ]
             for f in facts:
                 f["times_recalled"] += 1
             self._display_facts(topic, facts)
@@ -2597,12 +2909,13 @@ class Brain:
             age_hours = 9999
 
         # Decay curve: 50 points at 0hrs, ~25 at 24hrs, ~5 at 168hrs (1 week), ~0 at 720hrs (1 month)
-        recency = 50.0 * (0.997 ** age_hours)
+        recency = 50.0 * (0.997**age_hours)
 
         # Recall score (0-50): how often is it accessed?
         recalls = fact.get("times_recalled", 0)
         # Logarithmic: 0 recalls=0, 1=15, 3=25, 10=35, 30=45, 100+=50
         import math
+
         recall_score = min(50.0, 15.0 * math.log1p(recalls))
 
         return round(recency + recall_score, 1)
@@ -2631,14 +2944,16 @@ class Brain:
             count = len(facts)
             cold_facts = [f for f in facts if self._fact_temperature(f) < 15]
             hot_facts = [f for f in facts if self._fact_temperature(f) > 60]
-            topics_heat.append({
-                "topic": topic,
-                "temp": temp,
-                "count": count,
-                "cold": len(cold_facts),
-                "hot": len(hot_facts),
-                "cold_facts": cold_facts,
-            })
+            topics_heat.append(
+                {
+                    "topic": topic,
+                    "temp": temp,
+                    "count": count,
+                    "cold": len(cold_facts),
+                    "hot": len(hot_facts),
+                    "cold_facts": cold_facts,
+                }
+            )
 
         topics_heat.sort(key=lambda x: -x["temp"])
 
@@ -2646,7 +2961,9 @@ class Brain:
         max_temp = max(t["temp"] for t in topics_heat) if topics_heat else 1
         bar_width = 25
 
-        print(f"\n  {C.WHITE}{C.BOLD}{'Topic':<22} {'Temp':>5} {'Heat':<{bar_width + 2}} {'Hot':>4} {'Cold':>4} {'Total':>5}{C.RESET}")
+        print(
+            f"\n  {C.WHITE}{C.BOLD}{'Topic':<22} {'Temp':>5} {'Heat':<{bar_width + 2}} {'Hot':>4} {'Cold':>4} {'Total':>5}{C.RESET}"
+        )
         print(f"  {C.GRAY}{'─' * 72}{C.RESET}")
 
         for t in topics_heat:
@@ -2668,7 +2985,9 @@ class Brain:
                 icon = "🧊"
 
             heat_bar = f"{color}{'█' * filled}{C.GRAY}{'░' * (bar_width - filled)}{C.RESET}"
-            print(f"  {icon}{C.WHITE}{t['topic']:<20}{C.RESET} {t['temp']:>5.1f} {heat_bar} {C.RED}{t['hot']:>4}{C.RESET} {C.BLUE}{t['cold']:>4}{C.RESET} {C.DIM}{t['count']:>5}{C.RESET}")
+            print(
+                f"  {icon}{C.WHITE}{t['topic']:<20}{C.RESET} {t['temp']:>5.1f} {heat_bar} {C.RED}{t['hot']:>4}{C.RESET} {C.BLUE}{t['cold']:>4}{C.RESET} {C.DIM}{t['count']:>5}{C.RESET}"
+            )
 
         # Summary zones
         hot_topics = [t for t in topics_heat if t["temp"] > 60]
@@ -2676,7 +2995,9 @@ class Brain:
         cold_topics = [t for t in topics_heat if t["temp"] <= 15]
         total_cold_facts = sum(t["cold"] for t in topics_heat)
 
-        print(f"\n  {C.RED}🔥 Hot: {len(hot_topics)} topics{C.RESET}  {C.YELLOW}🌡️  Warm: {len(warm_topics)}{C.RESET}  {C.BLUE}🧊 Cold: {len(cold_topics)} topics ({total_cold_facts} cold facts){C.RESET}")
+        print(
+            f"\n  {C.RED}🔥 Hot: {len(hot_topics)} topics{C.RESET}  {C.YELLOW}🌡️  Warm: {len(warm_topics)}{C.RESET}  {C.BLUE}🧊 Cold: {len(cold_topics)} topics ({total_cold_facts} cold facts){C.RESET}"
+        )
 
         if show_facts and total_cold_facts > 0:
             print(f"\n  {C.BLUE}{C.BOLD}Cold Facts (candidates for review/removal):{C.RESET}")
@@ -2687,7 +3008,9 @@ class Brain:
                         break
                     temp = self._fact_temperature(f)
                     recalls = f.get("times_recalled", 0)
-                    print(f"    {C.BLUE}{temp:>5.1f}{C.RESET} {C.GRAY}[{t['topic']}]{C.RESET} {f['fact'][:60]} {C.DIM}(recalled {recalls}x){C.RESET}")
+                    print(
+                        f"    {C.BLUE}{temp:>5.1f}{C.RESET} {C.GRAY}[{t['topic']}]{C.RESET} {f['fact'][:60]} {C.DIM}(recalled {recalls}x){C.RESET}"
+                    )
                     shown += 1
 
         return topics_heat
@@ -2702,14 +3025,16 @@ class Brain:
             for f in facts:
                 temp = self._fact_temperature(f)
                 if temp < threshold:
-                    cold.append({
-                        "topic": topic,
-                        "fact": f["fact"],
-                        "temperature": temp,
-                        "recalls": f.get("times_recalled", 0),
-                        "confidence": f["confidence"],
-                        "age_days": self._fact_age_days(f),
-                    })
+                    cold.append(
+                        {
+                            "topic": topic,
+                            "fact": f["fact"],
+                            "temperature": temp,
+                            "recalls": f.get("times_recalled", 0),
+                            "confidence": f["confidence"],
+                            "age_days": self._fact_age_days(f),
+                        }
+                    )
 
         cold.sort(key=lambda x: x["temperature"])
 
@@ -2725,7 +3050,9 @@ class Brain:
             status = "FROZEN" if c["recalls"] == 0 else "COOLING"
             sc = C.BLUE if c["recalls"] == 0 else C.CYAN
             print(f"  {sc}{status:<8}{C.RESET} {C.GRAY}[{c['topic']}]{C.RESET} {c['fact'][:55]}")
-            print(f"           {C.DIM}temp={c['temperature']:.1f} | recalls={c['recalls']} | conf={c['confidence']}% | age={c['age_days']}d{C.RESET}")
+            print(
+                f"           {C.DIM}temp={c['temperature']:.1f} | recalls={c['recalls']} | conf={c['confidence']}% | age={c['age_days']}d{C.RESET}"
+            )
 
         # Suggestions
         frozen = [c for c in cold if c["recalls"] == 0]
@@ -2739,6 +3066,7 @@ class Brain:
     def _fact_age_days(self, fact):
         """How many days old is this fact?"""
         from datetime import datetime
+
         try:
             learned = datetime.strptime(fact["learned"], "%Y-%m-%d %H:%M:%S")
             return (datetime.now() - learned).days
@@ -2819,7 +3147,9 @@ class Brain:
                 prompt = f"{visible} ___"
 
             print(f"  {C.CYAN}Q{i}.{C.RESET} [{t}] {prompt}")
-            print(f"      {C.DIM}(confidence: {fact['confidence']}% | recalled: {fact.get('times_recalled', 0)}x){C.RESET}")
+            print(
+                f"      {C.DIM}(confidence: {fact['confidence']}% | recalled: {fact.get('times_recalled', 0)}x){C.RESET}"
+            )
 
             try:
                 answer = input(f"      {C.YELLOW}> {C.RESET}").strip()
@@ -2891,11 +3221,17 @@ class Brain:
         """Print brain statistics."""
         total = sum(len(v) for v in self.db["facts"].values())
         verified = sum(1 for v in self.db["facts"].values() for f in v if f["verified"])
-        soft = len(self.db.get("soft", {}).get("notes", []) if isinstance(self.db.get("soft"), dict) else self.db.get("soft", []))
+        soft = len(
+            self.db.get("soft", {}).get("notes", [])
+            if isinstance(self.db.get("soft"), dict)
+            else self.db.get("soft", [])
+        )
         avg_conf = 0
         if total:
             avg_conf = sum(f["confidence"] for v in self.db["facts"].values() for f in v) / total
-        info(f"Topics: {len(self.db['facts'])} | Hard Facts: {total} | Soft Notes: {soft} | Verified: {verified} | Avg Confidence: {avg_conf:.0f}%")
+        info(
+            f"Topics: {len(self.db['facts'])} | Hard Facts: {total} | Soft Notes: {soft} | Verified: {verified} | Avg Confidence: {avg_conf:.0f}%"
+        )
         self.level()
 
     def level(self):
@@ -2913,12 +3249,18 @@ class Brain:
         # Evolving brain art based on level
         art = self._brain_art(lvl)
         print(art)
-        print(f"  {color}{C.BOLD}Level {lvl} — \"{title}\"{C.RESET}")
+        print(f'  {color}{C.BOLD}Level {lvl} — "{title}"{C.RESET}')
         print(f"  {color}{bar}{C.RESET} {xp} XP ({progress}/100 to next level)")
         total_facts = sum(len(v) for v in self.db["facts"].values())
         cited = sum(1 for v in self.db["facts"].values() for f in v if self._is_cited(f))
-        soft = len(self.db.get("soft", {}).get("notes", []) if isinstance(self.db.get("soft"), dict) else self.db.get("soft", []))
-        print(f"  {C.DIM}Facts: {total_facts} | Cited: {cited}/{total_facts} | Soft: {soft} | Decayed: {sum(1 for v in self.db['facts'].values() for f in v if f.get('_decayed'))}{C.RESET}")
+        soft = len(
+            self.db.get("soft", {}).get("notes", [])
+            if isinstance(self.db.get("soft"), dict)
+            else self.db.get("soft", [])
+        )
+        print(
+            f"  {C.DIM}Facts: {total_facts} | Cited: {cited}/{total_facts} | Soft: {soft} | Decayed: {sum(1 for v in self.db['facts'].values() for f in v if f.get('_decayed'))}{C.RESET}"
+        )
 
     def _brain_art(self, level):
         """Return evolving ANSI brain art based on level."""
@@ -3003,13 +3345,13 @@ class Brain:
     def preview_evolution(self):
         """Show what the brain looks like at each major level milestone."""
         print(f"\n{C.CYAN}{C.BOLD}{'═' * 50}")
-        print(f"  BRAIN EVOLUTION PREVIEW")
+        print("  BRAIN EVOLUTION PREVIEW")
         print(f"{'═' * 50}{C.RESET}")
 
         milestones = [0, 1, 3, 5, 8, 10, 15, 20, 30]
         for lvl in milestones:
             title = _level_title(lvl)
-            print(f"\n  {C.YELLOW}{C.BOLD}Level {lvl} — \"{title}\"{C.RESET}")
+            print(f'\n  {C.YELLOW}{C.BOLD}Level {lvl} — "{title}"{C.RESET}')
             print(self._brain_art(lvl))
 
     # ═══════════════════════════════════════════════════════
@@ -3028,12 +3370,7 @@ class Brain:
         if "soft" not in self.db:
             self.db["soft"] = {"notes": []}
 
-        entry = {
-            "note": note,
-            "tags": tags or [],
-            "added": self._ts(),
-            "partition": "soft"
-        }
+        entry = {"note": note, "tags": tags or [], "added": self._ts(), "partition": "soft"}
         self.db["soft"]["notes"].append(entry)
         print(f"  {C.MAGENTA}[~]{C.RESET} Mused: {note} {C.DIM}(soft knowledge — not mission-critical){C.RESET}")
         # Soft knowledge gives half XP, no citation bonus
@@ -3042,7 +3379,11 @@ class Brain:
 
     def musings(self, tag_filter=None):
         """Browse soft knowledge, optionally filtered by tag."""
-        notes = self.db.get("soft", {}).get("notes", []) if isinstance(self.db.get("soft"), dict) else self.db.get("soft", [])
+        notes = (
+            self.db.get("soft", {}).get("notes", [])
+            if isinstance(self.db.get("soft"), dict)
+            else self.db.get("soft", [])
+        )
         if tag_filter:
             notes = [n for n in notes if tag_filter.lower() in [t.lower() for t in n.get("tags", [])]]
 
@@ -3059,14 +3400,18 @@ class Brain:
 
     def soft_associate(self, context_text):
         """Associative recall for soft knowledge — surfaces creative/nice-to-know matches."""
-        notes = self.db.get("soft", {}).get("notes", []) if isinstance(self.db.get("soft"), dict) else self.db.get("soft", [])
+        notes = (
+            self.db.get("soft", {}).get("notes", [])
+            if isinstance(self.db.get("soft"), dict)
+            else self.db.get("soft", [])
+        )
         if not notes or not context_text:
             return []
 
-        keywords = set(re.findall(r'[a-zA-Z0-9]+', context_text.lower()))
+        keywords = set(re.findall(r"[a-zA-Z0-9]+", context_text.lower()))
         hits = []
         for n in notes:
-            note_words = set(re.findall(r'[a-zA-Z0-9]+', n["note"].lower()))
+            note_words = set(re.findall(r"[a-zA-Z0-9]+", n["note"].lower()))
             tag_words = set(t.lower() for t in n.get("tags", []))
             overlap = keywords & (note_words | tag_words)
             if len(overlap) >= 2:
@@ -3209,7 +3554,7 @@ class Brain:
         # Build the wall
         w = 78
         print(f"\n{C.YELLOW}{C.BOLD}{'═' * w}")
-        print(f"  🏆  PROMPT WALL OF FAME  🏆")
+        print("  🏆  PROMPT WALL OF FAME  🏆")
         print(f"{'═' * w}{C.RESET}")
 
         for rank, (cat, p) in enumerate(top5, 1):
@@ -3225,17 +3570,23 @@ class Brain:
             print(f"  {C.GRAY}{'─' * (w - 4)}{C.RESET}")
 
             # Two-column layout
-            prompt_preview = p["prompt"][:200].replace('\n', ' ').strip()
+            prompt_preview = p["prompt"][:200].replace("\n", " ").strip()
             reason = p["reason"]
 
             print(f"  {C.WHITE}{C.BOLD}Category:{C.RESET}  {C.CYAN}{cat}{C.RESET}")
-            print(f"  {C.WHITE}{C.BOLD}Score:{C.RESET}     {C.GREEN}{p['score']}/100{C.RESET}  │  {C.WHITE}{C.BOLD}Used:{C.RESET} {used}x{avg_rating}")
-            print(f"  {C.WHITE}{C.BOLD}Prompt:{C.RESET}    {C.DIM}{prompt_preview}{'...' if len(p['prompt']) > 200 else ''}{C.RESET}")
+            print(
+                f"  {C.WHITE}{C.BOLD}Score:{C.RESET}     {C.GREEN}{p['score']}/100{C.RESET}  │  {C.WHITE}{C.BOLD}Used:{C.RESET} {used}x{avg_rating}"
+            )
+            print(
+                f"  {C.WHITE}{C.BOLD}Prompt:{C.RESET}    {C.DIM}{prompt_preview}{'...' if len(p['prompt']) > 200 else ''}{C.RESET}"
+            )
             print(f"  {C.WHITE}{C.BOLD}Why #{rank}:{C.RESET}   {C.YELLOW}{reason}{C.RESET}")
 
         # Category summary at bottom
         print(f"\n  {C.GRAY}{'─' * (w - 4)}{C.RESET}")
-        print(f"  {C.DIM}Categories: {len(all_prompts)} | Total Prompts: {sum(len(v) for v in all_prompts.values())} | Showing Top 5{C.RESET}")
+        print(
+            f"  {C.DIM}Categories: {len(all_prompts)} | Total Prompts: {sum(len(v) for v in all_prompts.values())} | Showing Top 5{C.RESET}"
+        )
         print(f"{C.YELLOW}{C.BOLD}{'═' * w}{C.RESET}\n")
 
     def prompt_list(self, category=None):
@@ -3265,7 +3616,7 @@ class Brain:
                 print(f"  {C.GRAY}│{C.RESET}")
                 print(f"  {C.GRAY}├─{C.RESET} {C.BOLD}[{slot}]{C.RESET} {C.WHITE}{p['name']}{C.RESET}")
                 print(f"  {C.GRAY}│{C.RESET}   {score_color}{bar}{C.RESET} {p['score']}/100  │  Used: {used}x")
-                preview = p["prompt"][:120].replace('\n', ' ')
+                preview = p["prompt"][:120].replace("\n", " ")
                 print(f"  {C.GRAY}│{C.RESET}   {C.DIM}Prompt: {preview}...{C.RESET}")
                 print(f"  {C.GRAY}│{C.RESET}   {C.YELLOW}Why: {p['reason']}{C.RESET}")
 
@@ -3290,21 +3641,21 @@ class Brain:
             score -= 10  # Too short to be useful
 
         # Structural signals
-        if any(marker in text for marker in ['1)', '1.', 'step 1', 'phase 1', 'first,']):
+        if any(marker in text for marker in ["1)", "1.", "step 1", "phase 1", "first,"]):
             score += 8  # Has numbered steps
-        if any(w in text for w in ['table', 'format', 'structure', 'output', 'present']):
+        if any(w in text for w in ["table", "format", "structure", "output", "present"]):
             score += 5  # Specifies output format
-        if any(w in text for w in ['verify', 'validate', 'confirm', 'check', 'test']):
+        if any(w in text for w in ["verify", "validate", "confirm", "check", "test"]):
             score += 5  # Has verification step
-        if any(w in text for w in ['save', 'log', 'record', 'document']):
+        if any(w in text for w in ["save", "log", "record", "document"]):
             score += 3  # Has persistence
-        if any(w in text for w in ['if ', 'unless', 'when ', 'fallback']):
+        if any(w in text for w in ["if ", "unless", "when ", "fallback"]):
             score += 4  # Has conditional logic
-        if any(w in text for w in ['color', 'banner', 'professional', 'clean']):
+        if any(w in text for w in ["color", "banner", "professional", "clean"]):
             score += 3  # Asks for good presentation
-        if any(w in text for w in ['rank', 'priorit', 'severity', 'risk']):
+        if any(w in text for w in ["rank", "priorit", "severity", "risk"]):
             score += 4  # Asks for prioritization
-        if any(w in text for w in ['suggest', 'recommend', 'next step']):
+        if any(w in text for w in ["suggest", "recommend", "next step"]):
             score += 3  # Asks for forward thinking
 
         return min(100, max(1, score))
@@ -3320,22 +3671,114 @@ class Brain:
             return []
 
         # Tokenize context into meaningful keywords
-        stop_words = {'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been',
-                      'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would',
-                      'could', 'should', 'may', 'might', 'can', 'shall', 'to',
-                      'of', 'in', 'for', 'on', 'with', 'at', 'by', 'from', 'as',
-                      'into', 'through', 'during', 'before', 'after', 'above',
-                      'below', 'between', 'out', 'off', 'over', 'under', 'again',
-                      'further', 'then', 'once', 'here', 'there', 'when', 'where',
-                      'why', 'how', 'all', 'each', 'every', 'both', 'few', 'more',
-                      'most', 'other', 'some', 'such', 'no', 'not', 'only', 'same',
-                      'so', 'than', 'too', 'very', 'just', 'because', 'but', 'and',
-                      'or', 'if', 'while', 'that', 'this', 'it', 'i', 'me', 'my',
-                      'we', 'our', 'you', 'your', 'he', 'she', 'they', 'what',
-                      'which', 'who', 'whom', 'use', 'using', 'run', 'make', 'get'}
+        stop_words = {
+            "the",
+            "a",
+            "an",
+            "is",
+            "are",
+            "was",
+            "were",
+            "be",
+            "been",
+            "have",
+            "has",
+            "had",
+            "do",
+            "does",
+            "did",
+            "will",
+            "would",
+            "could",
+            "should",
+            "may",
+            "might",
+            "can",
+            "shall",
+            "to",
+            "of",
+            "in",
+            "for",
+            "on",
+            "with",
+            "at",
+            "by",
+            "from",
+            "as",
+            "into",
+            "through",
+            "during",
+            "before",
+            "after",
+            "above",
+            "below",
+            "between",
+            "out",
+            "off",
+            "over",
+            "under",
+            "again",
+            "further",
+            "then",
+            "once",
+            "here",
+            "there",
+            "when",
+            "where",
+            "why",
+            "how",
+            "all",
+            "each",
+            "every",
+            "both",
+            "few",
+            "more",
+            "most",
+            "other",
+            "some",
+            "such",
+            "no",
+            "not",
+            "only",
+            "same",
+            "so",
+            "than",
+            "too",
+            "very",
+            "just",
+            "because",
+            "but",
+            "and",
+            "or",
+            "if",
+            "while",
+            "that",
+            "this",
+            "it",
+            "i",
+            "me",
+            "my",
+            "we",
+            "our",
+            "you",
+            "your",
+            "he",
+            "she",
+            "they",
+            "what",
+            "which",
+            "who",
+            "whom",
+            "use",
+            "using",
+            "run",
+            "make",
+            "get",
+        }
 
         import re
-        words = set(re.findall(r'[a-zA-Z0-9_./-]+', context_text.lower()))
+
+        words = set(re.findall(r"[a-zA-Z0-9_./-]+", context_text.lower()))
         keywords = words - stop_words
         # Also match multi-word phrases by checking 2-grams
         text_lower = context_text.lower()
@@ -3355,7 +3798,7 @@ class Brain:
                     score += 3
 
                 # Keyword overlap with fact text
-                fact_words = set(re.findall(r'[a-zA-Z0-9_./-]+', fact_lower))
+                fact_words = set(re.findall(r"[a-zA-Z0-9_./-]+", fact_lower))
                 overlap = keywords & fact_words
                 score += len(overlap) * 2
 
@@ -3485,7 +3928,9 @@ class Brain:
         print(f"  {C.DIM}Findings: {len(findings)}{C.RESET}")
 
         for f in findings:
-            print(f"  {C.CYAN}→{C.RESET} [{f.get('topic', '?')}] {f['fact'][:70]} {C.DIM}({f.get('confidence', 80)}%){C.RESET}")
+            print(
+                f"  {C.CYAN}→{C.RESET} [{f.get('topic', '?')}] {f['fact'][:70]} {C.DIM}({f.get('confidence', 80)}%){C.RESET}"
+            )
 
         if quality == "chef_kiss":
             print(f"\n  {C.MAGENTA}{C.BOLD}✨ CHEF'S KISS — auto-absorbing into brain!{C.RESET}")
@@ -3565,14 +4010,13 @@ class Brain:
             findings_count = len(s.get("findings", []))
 
             print(f"  {si} #{s['id']:<3}{C.RESET} {C.WHITE}{s['topic'][:45]}{C.RESET}")
-            print(f"       {C.DIM}status={s['status']} | priority={s['priority']} | findings={findings_count} {qi}{C.RESET}")
+            print(
+                f"       {C.DIM}status={s['status']} | priority={s['priority']} | findings={findings_count} {qi}{C.RESET}"
+            )
 
     def scout_pending(self):
         """Get scouts still waiting for results — for use by background agents."""
-        return [
-            s for s in self.db.get("scouts", [])
-            if s["status"] in ("dispatched", "active")
-        ]
+        return [s for s in self.db.get("scouts", []) if s["status"] in ("dispatched", "active")]
 
     def _display_facts(self, topic, facts):
         """Pretty-print facts for a topic."""

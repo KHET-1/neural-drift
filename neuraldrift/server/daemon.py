@@ -7,12 +7,13 @@ import os
 import signal
 import sys
 import time
-from contextlib import redirect_stdout, redirect_stderr
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
 from neuraldrift.brain import Brain
-from .protocol import encode_response, encode_event, decode_message
-from .wrappers import stats_data, level_data, heatmap_data, topics_data
+
+from .protocol import decode_message, encode_event, encode_response
+from .wrappers import heatmap_data, level_data, stats_data, topics_data
 
 log = logging.getLogger(__name__)
 
@@ -40,37 +41,33 @@ class BrainServer:
         b = self._brain
         return {
             # Meta
-            "ping":    (lambda _b, _p: {"pong": True, "ts": time.strftime("%Y-%m-%dT%H:%M:%S")}, False),
-            "info":    (lambda _b, _p: {"version": "1.0.0", "pid": os.getpid(), "clients": len(self._clients)}, False),
+            "ping": (lambda _b, _p: {"pong": True, "ts": time.strftime("%Y-%m-%dT%H:%M:%S")}, False),
+            "info": (lambda _b, _p: {"version": "1.0.0", "pid": os.getpid(), "clients": len(self._clients)}, False),
             "subscribe": (lambda _b, _p: {"subscribed": True}, False),
-
             # Knowledge
-            "learn":   (self._handle_learn, True),
-            "recall":  (self._handle_recall, False),
-            "search":  (self._handle_search, False),
+            "learn": (self._handle_learn, True),
+            "recall": (self._handle_recall, False),
+            "search": (self._handle_search, False),
             "associate": (self._handle_associate, False),
-            "verify":  (self._handle_verify, True),
-            "forget":  (self._handle_forget, True),
-            "muse":    (self._handle_muse, True),
-
+            "verify": (self._handle_verify, True),
+            "forget": (self._handle_forget, True),
+            "muse": (self._handle_muse, True),
             # Status
-            "stats":   (lambda _b, _p: stats_data(_b), False),
-            "level":   (lambda _b, _p: level_data(_b), False),
+            "stats": (lambda _b, _p: stats_data(_b), False),
+            "level": (lambda _b, _p: level_data(_b), False),
             "heatmap": (lambda _b, _p: heatmap_data(_b), False),
-            "topics":  (lambda _b, _p: topics_data(_b), False),
-
+            "topics": (lambda _b, _p: topics_data(_b), False),
             # Agents
-            "agent_checkin":  (self._handle_agent_checkin, True),
+            "agent_checkin": (self._handle_agent_checkin, True),
             "agent_checkout": (self._handle_agent_checkout, True),
-            "agent_roster":   (self._handle_agent_roster, False),
-            "agent_stats":    (self._handle_agent_stats, False),
-
+            "agent_roster": (self._handle_agent_roster, False),
+            "agent_stats": (self._handle_agent_stats, False),
             # Scouts
             "scout_dispatch": (self._handle_scout_dispatch, True),
-            "scout_return":   (self._handle_scout_return, True),
-            "scout_absorb":   (self._handle_scout_absorb, True),
-            "scout_status":   (self._handle_scout_status, False),
-            "scout_pending":  (self._handle_scout_pending, False),
+            "scout_return": (self._handle_scout_return, True),
+            "scout_absorb": (self._handle_scout_absorb, True),
+            "scout_status": (self._handle_scout_status, False),
+            "scout_pending": (self._handle_scout_pending, False),
         }
 
     # ── Knowledge handlers ────────────────────────────────────────────
@@ -296,34 +293,59 @@ class BrainServer:
                     level_after = self._brain.db.get("meta", {}).get("level", 0)
 
                     if method == "learn":
-                        await self._broadcast(encode_event("fact_learned", {
-                            "topic": params.get("topic", ""),
-                            "fact": params.get("fact", ""),
-                        }))
+                        await self._broadcast(
+                            encode_event(
+                                "fact_learned",
+                                {
+                                    "topic": params.get("topic", ""),
+                                    "fact": params.get("fact", ""),
+                                },
+                            )
+                        )
 
                     if method == "agent_checkin":
-                        await self._broadcast(encode_event("agent_spawned", {
-                            "agent_id": result.get("agent_id") if isinstance(result, dict) else result,
-                            "agent_name": result.get("agent_name", "") if isinstance(result, dict) else "",
-                        }))
+                        await self._broadcast(
+                            encode_event(
+                                "agent_spawned",
+                                {
+                                    "agent_id": result.get("agent_id") if isinstance(result, dict) else result,
+                                    "agent_name": result.get("agent_name", "") if isinstance(result, dict) else "",
+                                },
+                            )
+                        )
 
                     if method == "agent_checkout":
-                        await self._broadcast(encode_event("agent_completed", {
-                            "agent_id": params.get("agent_id"),
-                            "status": params.get("status", "done"),
-                        }))
+                        await self._broadcast(
+                            encode_event(
+                                "agent_completed",
+                                {
+                                    "agent_id": params.get("agent_id"),
+                                    "status": params.get("status", "done"),
+                                },
+                            )
+                        )
 
                     if xp_after != xp_before:
-                        await self._broadcast(encode_event("xp_changed", {
-                            "delta": xp_after - xp_before,
-                            "total": xp_after,
-                        }))
+                        await self._broadcast(
+                            encode_event(
+                                "xp_changed",
+                                {
+                                    "delta": xp_after - xp_before,
+                                    "total": xp_after,
+                                },
+                            )
+                        )
 
                     if level_after > level_before:
-                        await self._broadcast(encode_event("level_up", {
-                            "level": level_after,
-                            "title": level_data(self._brain).get("title", ""),
-                        }))
+                        await self._broadcast(
+                            encode_event(
+                                "level_up",
+                                {
+                                    "level": level_after,
+                                    "title": level_data(self._brain).get("title", ""),
+                                },
+                            )
+                        )
 
         except (ConnectionResetError, BrokenPipeError):
             pass
@@ -378,17 +400,17 @@ class BrainServer:
         # Initialize brain
         log.info("Loading Brain...")
         self._brain = Brain()
-        log.info("Brain loaded: %d facts, %d XP, level %d",
-                 sum(len(v) for v in self._brain.db.get("facts", {}).values()),
-                 self._brain.db.get("meta", {}).get("xp", 0),
-                 self._brain.db.get("meta", {}).get("level", 0))
+        log.info(
+            "Brain loaded: %d facts, %d XP, level %d",
+            sum(len(v) for v in self._brain.db.get("facts", {}).values()),
+            self._brain.db.get("meta", {}).get("xp", 0),
+            self._brain.db.get("meta", {}).get("level", 0),
+        )
 
         self._running = True
 
         # Create unix socket server
-        self._server = await asyncio.start_unix_server(
-            self._client_handler, path=str(SOCK_PATH)
-        )
+        self._server = await asyncio.start_unix_server(self._client_handler, path=str(SOCK_PATH))
         os.chmod(SOCK_PATH, 0o600)
 
         # Write PID file
@@ -461,6 +483,7 @@ class BrainServer:
 
 
 # ── Helpers ───────────────────────────────────────────────────────────
+
 
 def _call_silent(func, *args, **kwargs):
     """Call a Brain method while suppressing its stdout/stderr output."""

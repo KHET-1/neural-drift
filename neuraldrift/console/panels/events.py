@@ -5,7 +5,6 @@ from collections import deque
 from rich.panel import Panel
 from rich.text import Text
 
-
 EVENT_ICONS = {
     "info": "[blue][*][/]",
     "success": "[green][+][/]",
@@ -17,12 +16,12 @@ EVENT_ICONS = {
 
 
 class EventPanel:
-
     def __init__(self, maxlen: int = 200):
         self.entries: deque[tuple[str, str, str]] = deque(maxlen=maxlen)  # (time, level, msg)
 
     def add(self, level: str, message: str, timestamp: str = ""):
         import time
+
         ts = timestamp or time.strftime("%H:%M:%S")
         self.entries.append((ts, level, message))
 

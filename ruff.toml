@@ -1,0 +1,18 @@
+target-version = "py39"
+line-length = 120
+
+[lint]
+select = ["E", "F", "W", "I"]
+ignore = [
+    "E501",   # line too long — handled by formatter
+    "E701",   # one-liner ifs — project style choice
+    "E741",   # ambiguous variable name
+    "F401",   # unused import (some are re-exports)
+    "F811",   # variable shadowing in comprehensions
+    "F821",   # undefined name (asyncio — pre-existing)
+    "F841",   # unused variables — too noisy on existing code
+]
+
+[lint.per-file-ignores]
+"tests/*" = ["F811"]
+"*/__init__.py" = ["F401", "F403", "I001"]

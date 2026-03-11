@@ -4,7 +4,7 @@ import asyncio
 import logging
 from collections import deque
 from enum import Enum
-from typing import Callable, Awaitable
+from typing import Awaitable, Callable
 
 from prompt_toolkit.input import create_input
 from prompt_toolkit.keys import Keys
@@ -104,9 +104,7 @@ class InputHandler:
                     self.history.append(cmd)
                     self._history_idx = -1
                     if self.on_command and self._loop:
-                        self._loop.call_soon_threadsafe(
-                            lambda c=cmd: asyncio.ensure_future(self.on_command(c))
-                        )
+                        self._loop.call_soon_threadsafe(lambda c=cmd: asyncio.ensure_future(self.on_command(c)))
             elif key == Keys.Backspace or key == Keys.ControlH:
                 self.buffer = self.buffer[:-1]
             elif key == Keys.Up:

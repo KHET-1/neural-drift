@@ -28,48 +28,53 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 # ─── Color System ───────────────────────────────────────────
 
+
 def rgb(r, g, b):
     """Truecolor foreground."""
     return f"\033[38;2;{r};{g};{b}m"
 
+
 def rgb_bg(r, g, b):
     """Truecolor background."""
     return f"\033[48;2;{r};{g};{b}m"
+
 
 RST = "\033[0m"
 BOLD = "\033[1m"
 DIM = "\033[2m"
 
 # NeuralDrift palette
-NEURAL  = rgb(0, 255, 255)       # Electric cyan
-AI_PINK = rgb(255, 80, 180)      # AI magenta-pink
-HUMAN   = rgb(255, 191, 0)       # Warm amber
-STEEL   = rgb(88, 88, 88)        # Steel gray
-NEON    = rgb(57, 255, 20)       # Neon green
-WHITE   = rgb(255, 255, 255)     # Bright white
-SILVER  = rgb(180, 180, 180)     # Silver
-FAINT   = rgb(60, 60, 60)        # Very dim
+NEURAL = rgb(0, 255, 255)  # Electric cyan
+AI_PINK = rgb(255, 80, 180)  # AI magenta-pink
+HUMAN = rgb(255, 191, 0)  # Warm amber
+STEEL = rgb(88, 88, 88)  # Steel gray
+NEON = rgb(57, 255, 20)  # Neon green
+WHITE = rgb(255, 255, 255)  # Bright white
+SILVER = rgb(180, 180, 180)  # Silver
+FAINT = rgb(60, 60, 60)  # Very dim
 
 # Fallback ANSI if no truecolor
-ANSI_CYAN    = "\033[96m"
+ANSI_CYAN = "\033[96m"
 ANSI_MAGENTA = "\033[95m"
-ANSI_YELLOW  = "\033[93m"
-ANSI_GREEN   = "\033[92m"
-ANSI_WHITE   = "\033[97m"
-ANSI_GRAY    = "\033[90m"
-ANSI_RED     = "\033[91m"
+ANSI_YELLOW = "\033[93m"
+ANSI_GREEN = "\033[92m"
+ANSI_WHITE = "\033[97m"
+ANSI_GRAY = "\033[90m"
+ANSI_RED = "\033[91m"
+
 
 def has_truecolor():
     """Detect truecolor support."""
     ct = os.environ.get("COLORTERM", "")
     return ct in ("truecolor", "24bit")
 
+
 def gradient_text(text, start_rgb, end_rgb):
     """Apply horizontal color gradient to text."""
     n = max(len(text) - 1, 1)
     result = []
     for i, ch in enumerate(text):
-        if ch == ' ':
+        if ch == " ":
             result.append(ch)
             continue
         t = i / n
@@ -78,6 +83,7 @@ def gradient_text(text, start_rgb, end_rgb):
         b = int(start_rgb[2] + (end_rgb[2] - start_rgb[2]) * t)
         result.append(f"{rgb(r, g, b)}{ch}")
     return "".join(result) + RST
+
 
 def gradient_line_vertical(text, color_rgb, line_idx, total_lines):
     """Apply vertical dimming — brighter at top, dimmer at bottom."""
@@ -90,16 +96,20 @@ def gradient_line_vertical(text, color_rgb, line_idx, total_lines):
 
 # ─── Animation Primitives ──────────────────────────────────
 
+
 def hide_cursor():
     sys.stdout.write("\033[?25l")
     sys.stdout.flush()
+
 
 def show_cursor():
     sys.stdout.write("\033[?25h")
     sys.stdout.flush()
 
+
 def flush():
     sys.stdout.flush()
+
 
 def typed(text, delay=0.03, color=""):
     """Typewriter effect with optional color."""
@@ -109,12 +119,14 @@ def typed(text, delay=0.03, color=""):
         time.sleep(delay + random.uniform(-0.01, 0.015))
     print()
 
+
 def reveal_lines(lines, delay=0.04, prefix=""):
     """Line-by-line reveal."""
     for line in lines:
         print(f"{prefix}{line}")
         flush()
         time.sleep(delay)
+
 
 def decrypt_text(text, color_locked, color_cycling, iterations=12, delay=0.04):
     """Decrypt/scramble effect — random chars lock in left to right."""
@@ -125,8 +137,8 @@ def decrypt_text(text, color_locked, color_cycling, iterations=12, delay=0.04):
         lock_pos = int(length * (iteration / iterations))
         display = []
         for i, ch in enumerate(text):
-            if ch == ' ':
-                display.append(' ')
+            if ch == " ":
+                display.append(" ")
             elif i < lock_pos:
                 display.append(f"{color_locked}{ch}")
             else:
@@ -137,17 +149,19 @@ def decrypt_text(text, color_locked, color_cycling, iterations=12, delay=0.04):
         time.sleep(delay)
     print()
 
+
 def fade_line(text, color, steps=4, delay=0.06):
     """Fade in using shade characters then real text."""
-    shades = ['░', '▒', '▓']
+    shades = ["░", "▒", "▓"]
     for shade in shades:
-        display = "".join(shade if ch != ' ' else ' ' for ch in text)
+        display = "".join(shade if ch != " " else " " for ch in text)
         sys.stdout.write(f"\r{STEEL}{display}{RST}")
         flush()
         time.sleep(delay)
     sys.stdout.write(f"\r{color}{text}{RST}")
     flush()
     print()
+
 
 def pulse_flash(text, color, flashes=2, delay=0.08):
     """Brief bright flash effect."""
@@ -227,6 +241,7 @@ def get_brain_stats():
     """Load brain stats if available."""
     try:
         from neuraldrift.brain import Brain
+
         brain = Brain()
         meta = brain.db.get("meta", {})
         facts = brain.db.get("facts", {})
@@ -247,9 +262,9 @@ def get_brain_stats():
 def phase_1_frame(speed=1.0):
     """Phase 1: Frame materializes."""
     width = 62
-    top    = f"  ╔{'═' * (width - 2)}╗"
+    top = f"  ╔{'═' * (width - 2)}╗"
     bottom = f"  ╚{'═' * (width - 2)}╝"
-    side_l = f"  ║"
+    side_l = "  ║"
     side_r = f"{'║':>{width - 2}}"
 
     # Fade in top border
@@ -298,8 +313,7 @@ def phase_3_subtitle(speed=1.0):
     """Phase 3: Tagline types itself out."""
     print()
     sys.stdout.write("    ")
-    typed("Your knowledge has a temperature.",
-          delay=0.025 * speed, color=SILVER)
+    typed("Your knowledge has a temperature.", delay=0.025 * speed, color=SILVER)
     time.sleep(0.3 * speed)
 
 
@@ -343,10 +357,14 @@ def phase_5_stats(speed=1.0):
 
     # Stats lines with staggered reveal
     stat_lines = [
-        (f"  {NEURAL}  Facts:{RST}  {WHITE}{stats['facts']}{RST}  "
-         f"{STEEL}across{RST}  {WHITE}{stats['topics']}{RST} topics"),
-        (f"  {NEON}  Level:{RST}  {WHITE}{stats['level']}{RST}  "
-         f"{STEEL}|{RST}  {NEON}XP:{RST}  {WHITE}{stats['xp']}{RST}"),
+        (
+            f"  {NEURAL}  Facts:{RST}  {WHITE}{stats['facts']}{RST}  "
+            f"{STEEL}across{RST}  {WHITE}{stats['topics']}{RST} topics"
+        ),
+        (
+            f"  {NEON}  Level:{RST}  {WHITE}{stats['level']}{RST}  "
+            f"{STEEL}|{RST}  {NEON}XP:{RST}  {WHITE}{stats['xp']}{RST}"
+        ),
     ]
 
     for line in stat_lines:
@@ -362,7 +380,7 @@ def phase_5_stats(speed=1.0):
     print()
 
     # XP bar
-    xp_in_level = stats['xp'] % 100
+    xp_in_level = stats["xp"] % 100
     bar_width = 30
     filled = int(bar_width * xp_in_level / 100)
     bar = f"{'█' * filled}{'░' * (bar_width - filled)}"
@@ -390,13 +408,15 @@ def scroll(quick=False, static=False):
         # No animation — just print everything
         print(f"\n{NEURAL}{BOLD}╔{'═' * 60}╗{RST}")
         for line in TITLE_ART:
-            print(f"{NEURAL}║{RST} {gradient_text(line, (0,255,255), (255,80,180))} {NEURAL}║{RST}")
+            print(f"{NEURAL}║{RST} {gradient_text(line, (0, 255, 255), (255, 80, 180))} {NEURAL}║{RST}")
         for line in DRIFT_ART:
-            print(f"{NEURAL}║{RST}{'':>12}{gradient_text(line, (255,80,180), (255,191,0))}{'':>10}{NEURAL}║{RST}")
+            print(f"{NEURAL}║{RST}{'':>12}{gradient_text(line, (255, 80, 180), (255, 191, 0))}{'':>10}{NEURAL}║{RST}")
         print(f"{NEURAL}{BOLD}╚{'═' * 60}╝{RST}")
         print(f"\n    {SILVER}Your knowledge has a temperature.{RST}")
         stats = get_brain_stats()
-        print(f"\n  {NEURAL}Facts:{RST} {stats['facts']}  {NEURAL}Level:{RST} {stats['level']}  {NEON}XP:{RST} {stats['xp']}")
+        print(
+            f"\n  {NEURAL}Facts:{RST} {stats['facts']}  {NEURAL}Level:{RST} {stats['level']}  {NEON}XP:{RST} {stats['xp']}"
+        )
         print()
         return
 
@@ -431,11 +451,10 @@ def scroll(quick=False, static=False):
 
 def main():
     import argparse
+
     parser = argparse.ArgumentParser(description="NeuralDrift Opening Scroll")
-    parser.add_argument("--quick", "-q", action="store_true",
-                        help="Fast mode (reduced delays)")
-    parser.add_argument("--static", "-s", action="store_true",
-                        help="No animation, just print")
+    parser.add_argument("--quick", "-q", action="store_true", help="Fast mode (reduced delays)")
+    parser.add_argument("--static", "-s", action="store_true", help="No animation, just print")
     args = parser.parse_args()
 
     # Respect NO_COLOR convention

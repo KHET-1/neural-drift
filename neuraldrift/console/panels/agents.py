@@ -6,7 +6,6 @@ from rich.text import Text
 
 
 class AgentPanel:
-
     def __init__(self):
         self.roster: list[dict] = []
         self.legends: list[str] = []
@@ -23,16 +22,16 @@ class AgentPanel:
 
         if self.roster:
             t = Table.grid(padding=(0, 2), expand=True)
-            t.add_column(width=6)   # id
+            t.add_column(width=6)  # id
             t.add_column(width=16)  # name
             t.add_column(width=10)  # status
-            t.add_column(ratio=1)   # task/result
+            t.add_column(ratio=1)  # task/result
 
             for a in self.roster[-10:]:
                 aid = f"#{a.get('id', '?')}"
-                name = a.get('name', 'Unknown')[:15]
-                status = a.get('status', '?')
-                task = a.get('task', '') or a.get('result', '')
+                name = a.get("name", "Unknown")[:15]
+                status = a.get("status", "?")
+                task = a.get("task", "") or a.get("result", "")
                 task = task[:50]
 
                 if status == "active":

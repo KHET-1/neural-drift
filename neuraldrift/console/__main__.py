@@ -17,15 +17,20 @@ def main():
         description="NeuralDrift Console — TUI dashboard with brain + player",
     )
     parser.add_argument(
-        "music", nargs="?", default=None,
+        "music",
+        nargs="?",
+        default=None,
         help="Path to music file or directory to load",
     )
     parser.add_argument(
-        "--no-player", action="store_true",
+        "--no-player",
+        action="store_true",
         help="Disable the music player",
     )
     parser.add_argument(
-        "--verbose", "-v", action="store_true",
+        "--verbose",
+        "-v",
+        action="store_true",
         help="Verbose logging",
     )
     args = parser.parse_args()
@@ -38,6 +43,7 @@ def main():
     )
 
     from .app import ConsoleApp
+
     app = ConsoleApp(music_path=args.music, no_player=args.no_player)
     app.start()
 

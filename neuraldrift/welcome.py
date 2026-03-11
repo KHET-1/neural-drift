@@ -14,8 +14,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from neuraldrift.output import C, success, info, warning, header
 from neuraldrift.banners import banner
+from neuraldrift.output import C, header, info, success, warning
 
 
 def pause(msg=""):
@@ -60,7 +60,7 @@ def welcome():
 
     print(f"""
   {C.CYAN}{C.BOLD}BRAIN #1: The AI Brain{C.RESET}
-  {C.GRAY}{'─' * 40}{C.RESET}
+  {C.GRAY}{"─" * 40}{C.RESET}
 
   This is your AI assistant's memory.
   It stores facts, tracks confidence, and levels up as it learns.
@@ -76,6 +76,7 @@ def welcome():
     pause("Press Enter to see it in action...")
 
     from neuraldrift.brain import Brain
+
     brain = Brain()
     print()
     brain.level()
@@ -104,7 +105,7 @@ def welcome():
 
     print(f"""
   {C.MAGENTA}{C.BOLD}BRAIN #2: The Human Brain{C.RESET}
-  {C.GRAY}{'─' * 40}{C.RESET}
+  {C.GRAY}{"─" * 40}{C.RESET}
 
   This one is yours. Completely personal.
 
@@ -144,6 +145,7 @@ def welcome():
 """)
 
     from neuraldrift.human_brain import HumanBrain
+
     hb = HumanBrain()
 
     try:

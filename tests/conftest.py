@@ -1,7 +1,8 @@
 """Shared fixtures for NeuralDrift test suite."""
 
-import pytest
 from pathlib import Path
+
+import pytest
 
 
 @pytest.fixture
@@ -15,6 +16,7 @@ def tmp_brain(tmp_path, monkeypatch):
     monkeypatch.setattr(brain_mod, "BRAIN_DB", brain_dir / "brain_db.json")
 
     from neuraldrift.brain import Brain
+
     return Brain(max_recall=8)
 
 
@@ -29,6 +31,7 @@ def tmp_human(tmp_path, monkeypatch):
     monkeypatch.setattr(hb_mod, "HUMAN_DB", human_dir / "human_brain.json")
 
     from neuraldrift.human_brain import HumanBrain
+
     return HumanBrain()
 
 
@@ -44,4 +47,5 @@ def tmp_session(tmp_path, monkeypatch):
     monkeypatch.setattr(sess_mod, "BRAIN_DB", sess_dir / "brain_db.json")
 
     from neuraldrift.session import Session
+
     return Session()

@@ -1,7 +1,7 @@
 """Brain method wrappers — return structured data instead of printing."""
 
-from datetime import datetime, timedelta
 import math
+from datetime import datetime, timedelta
 
 
 def stats_data(brain) -> dict:
@@ -85,9 +85,19 @@ def topics_data(brain) -> list[str]:
 # ── Helpers ───────────────────────────────────────────────────────────
 
 _LEVEL_TITLES = {
-    0: "Blank Slate", 1: "Awakened", 2: "Observer", 3: "Student",
-    5: "Apprentice", 8: "Practitioner", 10: "Specialist", 15: "Expert",
-    20: "Master", 30: "Sage", 50: "Oracle", 75: "Transcendent", 100: "Omniscient",
+    0: "Blank Slate",
+    1: "Awakened",
+    2: "Observer",
+    3: "Student",
+    5: "Apprentice",
+    8: "Practitioner",
+    10: "Specialist",
+    15: "Expert",
+    20: "Master",
+    30: "Sage",
+    50: "Oracle",
+    75: "Transcendent",
+    100: "Omniscient",
 }
 
 

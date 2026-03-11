@@ -4,23 +4,21 @@ Usage:
     from neuraldrift import run_cmd, timestamp, save_json, load_json, ensure_dir
 """
 
-import subprocess
 import json
 import os
+import subprocess
 import threading
 import time
 from datetime import datetime
 from pathlib import Path
-from .output import C, info, warning, error, success, debug
+
+from .output import C, debug, error, info, success, warning
 
 
 def run_cmd(cmd, timeout=120, shell=True, capture=True):
     """Run a shell command and return (returncode, stdout, stderr)."""
     try:
-        result = subprocess.run(
-            cmd, shell=shell, capture_output=capture,
-            text=True, timeout=timeout
-        )
+        result = subprocess.run(cmd, shell=shell, capture_output=capture, text=True, timeout=timeout)
         return result.returncode, result.stdout.strip(), result.stderr.strip()
     except subprocess.TimeoutExpired:
         return -1, "", f"Command timed out after {timeout}s"
@@ -41,15 +39,12 @@ def datestamp():
 def save_json(data, filepath):
     """Save data to JSON file atomically (temp + rename). Safe against crashes."""
     import tempfile
+
     filepath = Path(filepath)
     filepath.parent.mkdir(parents=True, exist_ok=True)
-    fd, tmp_path = tempfile.mkstemp(
-        dir=str(filepath.parent),
-        prefix=f".{filepath.stem}_",
-        suffix=".tmp"
-    )
+    fd, tmp_path = tempfile.mkstemp(dir=str(filepath.parent), prefix=f".{filepath.stem}_", suffix=".tmp")
     try:
-        with os.fdopen(fd, 'w') as f:
+        with os.fdopen(fd, "w") as f:
             json.dump(data, f, indent=2, default=str)
             f.flush()
             os.fsync(f.fileno())
@@ -66,14 +61,14 @@ def load_json(filepath):
     """Load JSON file with backup recovery on corruption."""
     filepath = Path(filepath)
     try:
-        with open(filepath, 'r') as f:
+        with open(filepath, "r") as f:
             return json.load(f)
     except json.JSONDecodeError:
         # Try backup
         backup = filepath.with_suffix(filepath.suffix + ".bak")
         if backup.exists():
             warning(f"Corrupted {filepath.name}, recovering from backup")
-            with open(backup, 'r') as f:
+            with open(backup, "r") as f:
                 data = json.load(f)
             save_json(data, str(filepath))
             return data
@@ -89,7 +84,7 @@ def ensure_dir(path):
 
 def file_size_human(size_bytes):
     """Convert bytes to human readable string."""
-    for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+    for unit in ["B", "KB", "MB", "GB", "TB"]:
         if size_bytes < 1024:
             return f"{size_bytes:.1f} {unit}"
         size_bytes /= 1024
@@ -105,13 +100,14 @@ def save_learning(topic, content):
     """Append a learning to the learnings file."""
     learnings_file = memory_path() / "learnings.md"
     learnings_file.parent.mkdir(parents=True, exist_ok=True)
-    with open(learnings_file, 'a') as f:
+    with open(learnings_file, "a") as f:
         f.write(f"\n### {topic} — {datestamp()}\n{content}\n")
 
 
 # ═══════════════════════════════════════════════════════════
 #  SpinGuard — Watchdog with auto-terminate
 # ═══════════════════════════════════════════════════════════
+
 
 class SpinGuard:
     """
@@ -135,8 +131,9 @@ class SpinGuard:
         guard = SpinGuard(checker=fn, max_spins=10, on_terminate=cleanup_fn)
     """
 
-    def __init__(self, checker, max_spins=5, interval=2.0,
-                 on_terminate=None, on_success=None, label="task", silent=False):
+    def __init__(
+        self, checker, max_spins=5, interval=2.0, on_terminate=None, on_success=None, label="task", silent=False
+    ):
         """
         Args:
             checker:      callable() -> result or None (None = still pending)
@@ -164,7 +161,7 @@ class SpinGuard:
 
     def _spin_symbol(self, n):
         """Rotating spinner character."""
-        frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+        frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
         return frames[n % len(frames)]
 
     def _log(self, msg):
@@ -175,7 +172,9 @@ class SpinGuard:
         """Core spin loop."""
         for i in range(1, self.max_spins + 1):
             if self._killed.is_set():
-                self._log(f"  {C.YELLOW}{self._spin_symbol(i)} [{self.label}] killed at spin {i}/{self.max_spins}{C.RESET}")
+                self._log(
+                    f"  {C.YELLOW}{self._spin_symbol(i)} [{self.label}] killed at spin {i}/{self.max_spins}{C.RESET}"
+                )
                 self.terminated = True
                 return None
 
@@ -201,7 +200,9 @@ class SpinGuard:
 
             # Still pending
             remaining = self.max_spins - i
-            self._log(f"  {C.GRAY}{self._spin_symbol(i)} [{self.label}] spin {i}/{self.max_spins} — pending ({remaining} left){C.RESET}")
+            self._log(
+                f"  {C.GRAY}{self._spin_symbol(i)} [{self.label}] spin {i}/{self.max_spins} — pending ({remaining} left){C.RESET}"
+            )
 
             if i < self.max_spins:
                 self._killed.wait(self.interval)
@@ -239,17 +240,19 @@ class SpinGuard:
     def status(self):
         """Return a status dict."""
         return {
-            'label': self.label,
-            'spins_used': self.spins_used,
-            'max_spins': self.max_spins,
-            'succeeded': self.succeeded,
-            'terminated': self.terminated,
-            'alive': self.is_alive(),
-            'result': self.result,
+            "label": self.label,
+            "spins_used": self.spins_used,
+            "max_spins": self.max_spins,
+            "succeeded": self.succeeded,
+            "terminated": self.terminated,
+            "alive": self.is_alive(),
+            "result": self.result,
         }
 
     def __repr__(self):
-        state = "alive" if self.is_alive() else ("done" if self.succeeded else ("killed" if self.terminated else "idle"))
+        state = (
+            "alive" if self.is_alive() else ("done" if self.succeeded else ("killed" if self.terminated else "idle"))
+        )
         return f"<SpinGuard '{self.label}' {self.spins_used}/{self.max_spins} [{state}]>"
 
 
@@ -287,7 +290,7 @@ class SpinSwarm:
     def summary(self):
         """Print status table of all guards."""
         print(f"\n  {C.CYAN}{C.BOLD}{'Guard':<20} {'Spins':>8} {'Status':>12} {'Result'}{C.RESET}")
-        print(f"  {C.GRAY}{'─'*60}{C.RESET}")
+        print(f"  {C.GRAY}{'─' * 60}{C.RESET}")
         for g in self.guards:
             if g.succeeded:
                 status = f"{C.GREEN}resolved{C.RESET}"

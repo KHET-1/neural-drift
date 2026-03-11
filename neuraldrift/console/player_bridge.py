@@ -7,8 +7,9 @@ from pathlib import Path
 log = logging.getLogger(__name__)
 
 try:
-    from phantom_player.core.player import AudioPlayer, PlayerState
     from phantom_player.constants import SUPPORTED_EXTENSIONS
+    from phantom_player.core.player import AudioPlayer, PlayerState
+
     PLAYER_AVAILABLE = True
 except ImportError:
     PLAYER_AVAILABLE = False
@@ -99,10 +100,7 @@ class PlayerBridge:
         if p.is_file() and p.suffix.lower() in SUPPORTED_EXTENSIONS:
             self._player.load_files([str(p)])
         elif p.is_dir():
-            files = sorted(
-                str(f) for f in p.rglob("*")
-                if f.suffix.lower() in SUPPORTED_EXTENSIONS
-            )
+            files = sorted(str(f) for f in p.rglob("*") if f.suffix.lower() in SUPPORTED_EXTENSIONS)
             if files:
                 self._player.load_files(files)
 
@@ -114,10 +112,7 @@ class PlayerBridge:
         if p.is_file() and p.suffix.lower() in SUPPORTED_EXTENSIONS:
             self._player.add_files([str(p)])
         elif p.is_dir():
-            files = sorted(
-                str(f) for f in p.rglob("*")
-                if f.suffix.lower() in SUPPORTED_EXTENSIONS
-            )
+            files = sorted(str(f) for f in p.rglob("*") if f.suffix.lower() in SUPPORTED_EXTENSIONS)
             if files:
                 self._player.add_files(files)
 

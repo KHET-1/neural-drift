@@ -15,6 +15,7 @@ def _ts() -> str:
 
 # ── Encode ────────────────────────────────────────────────────────────
 
+
 def encode_request(method: str, params: dict | None = None, req_id: str | None = None) -> bytes:
     """Client → Server request as JSON line."""
     msg = {
@@ -49,6 +50,7 @@ def encode_event(event: str, data: dict | None = None) -> bytes:
 
 
 # ── Decode ────────────────────────────────────────────────────────────
+
 
 def decode_message(line: bytes | str) -> dict | None:
     """Parse a JSON line into a message dict. Returns None on bad input."""

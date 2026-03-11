@@ -2,12 +2,11 @@
 
 import time
 
-from rich.text import Text
 from rich.table import Table
+from rich.text import Text
 
 
 class HeaderPanel:
-
     def __init__(self):
         self.server_connected = False
         self.level = 0
@@ -27,9 +26,7 @@ class HeaderPanel:
         t.add_column(justify="right")
 
         conn = "[green]CONNECTED[/]" if self.server_connected else "[red]DISCONNECTED[/]"
-        left = Text.from_markup(
-            f"[bold cyan]NEURALDRIFT CONSOLE[/] [dim]v1.0[/]    Server: {conn}"
-        )
+        left = Text.from_markup(f"[bold cyan]NEURALDRIFT CONSOLE[/] [dim]v1.0[/]    Server: {conn}")
 
         clock = time.strftime("%H:%M:%S")
         parts = []

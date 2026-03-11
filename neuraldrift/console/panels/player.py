@@ -4,9 +4,8 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-
 FILL = "\u2501"  # ━
-DOT = "\u25CF"   # ●
+DOT = "\u25cf"  # ●
 
 
 def _seek_bar(position: float, duration: float, width: int = 30) -> Text:
@@ -17,7 +16,7 @@ def _seek_bar(position: float, duration: float, width: int = 30) -> Text:
     pos = int(width * pct)
     pos = max(0, min(pos, width - 1))
     bar = FILL * pos + DOT + FILL * (width - pos - 1)
-    return Text.from_markup(f"[cyan]{bar[:pos + 1]}[/][dim]{bar[pos + 1:]}[/]")
+    return Text.from_markup(f"[cyan]{bar[: pos + 1]}[/][dim]{bar[pos + 1 :]}[/]")
 
 
 def _format_time(seconds: float | None) -> str:
@@ -33,7 +32,6 @@ def _vol_bar(vol: int, width: int = 10) -> str:
 
 
 class PlayerPanel:
-
     def __init__(self):
         self.available = False
         self.playing = False
@@ -116,5 +114,6 @@ class PlayerPanel:
 def _track_name(path: str) -> str:
     """Extract display name from file path."""
     from pathlib import Path
+
     p = Path(path)
     return p.stem.replace("_", " ").replace("-", " ")

@@ -4,7 +4,6 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-
 FILL = "\u2588"  # █
 EMPTY = "\u2591"  # ░
 
@@ -19,13 +18,10 @@ def _bar(value: float, maximum: float, width: int = 24) -> Text:
         color = "yellow"
     else:
         color = "red"
-    return Text.from_markup(
-        f"[{color}]{FILL * filled}[/][dim]{EMPTY * (width - filled)}[/] {pct * 100:.0f}%"
-    )
+    return Text.from_markup(f"[{color}]{FILL * filled}[/][dim]{EMPTY * (width - filled)}[/] {pct * 100:.0f}%")
 
 
 class BrainPanel:
-
     def __init__(self):
         self.level = 0
         self.title = ""

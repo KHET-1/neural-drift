@@ -38,7 +38,7 @@ import time
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from .output import C, success, error, warning, info, header
+from .output import C, error, header, info, success, warning
 
 # ═══════════════════════════════════════
 # CONSTANTS
@@ -49,14 +49,15 @@ SESSION_FILE = SESSION_DIR / "session_state.json"
 BRAIN_DB = SESSION_DIR / "brain_db.json"
 
 # Staleness thresholds
-FRESH_THRESHOLD = timedelta(hours=2)     # < 2hrs = fresh, safe to resume
-WARM_THRESHOLD = timedelta(hours=12)     # < 12hrs = warm, partial resume
+FRESH_THRESHOLD = timedelta(hours=2)  # < 2hrs = fresh, safe to resume
+WARM_THRESHOLD = timedelta(hours=12)  # < 12hrs = warm, partial resume
 # > 12hrs = stale, recommend restart
 
 
 # ═══════════════════════════════════════
 # ATOMIC I/O — the foundation
 # ═══════════════════════════════════════
+
 
 def atomic_save(data, filepath, indent=2):
     """
@@ -67,13 +68,9 @@ def atomic_save(data, filepath, indent=2):
     filepath.parent.mkdir(parents=True, exist_ok=True)
 
     # Write to temp file in same directory (same filesystem = atomic rename)
-    fd, tmp_path = tempfile.mkstemp(
-        dir=str(filepath.parent),
-        prefix=f".{filepath.stem}_",
-        suffix=".tmp"
-    )
+    fd, tmp_path = tempfile.mkstemp(dir=str(filepath.parent), prefix=f".{filepath.stem}_", suffix=".tmp")
     try:
-        with os.fdopen(fd, 'w') as f:
+        with os.fdopen(fd, "w") as f:
             json.dump(data, f, indent=indent, default=str)
             f.flush()
             os.fsync(f.fileno())
@@ -99,14 +96,14 @@ def atomic_load(filepath, fallback=None):
     # Try main file
     if filepath.exists():
         try:
-            with open(filepath, 'r') as f:
+            with open(filepath, "r") as f:
                 return json.load(f)
         except (json.JSONDecodeError, UnicodeDecodeError) as e:
             warning(f"Corrupted: {filepath.name} — {e}")
             # Try backup
             if backup.exists():
                 try:
-                    with open(backup, 'r') as f:
+                    with open(backup, "r") as f:
                         data = json.load(f)
                     success(f"Recovered from backup: {backup.name}")
                     # Restore main from backup
@@ -118,7 +115,7 @@ def atomic_load(filepath, fallback=None):
     # Try backup alone
     if not filepath.exists() and backup.exists():
         try:
-            with open(backup, 'r') as f:
+            with open(backup, "r") as f:
                 data = json.load(f)
             success(f"Main file missing, recovered from backup: {backup.name}")
             atomic_save(data, filepath)
@@ -141,7 +138,11 @@ def rotate_backup(filepath, max_backups=3):
     # Rotate existing backups
     for i in range(max_backups - 1, 0, -1):
         older = filepath.with_suffix(f"{filepath.suffix}.bak.{i}")
-        newer = filepath.with_suffix(f"{filepath.suffix}.bak.{i - 1}") if i > 1 else filepath.with_suffix(f"{filepath.suffix}.bak")
+        newer = (
+            filepath.with_suffix(f"{filepath.suffix}.bak.{i - 1}")
+            if i > 1
+            else filepath.with_suffix(f"{filepath.suffix}.bak")
+        )
         if newer.exists():
             try:
                 os.replace(str(newer), str(older))
@@ -152,6 +153,7 @@ def rotate_backup(filepath, max_backups=3):
     backup = filepath.with_suffix(f"{filepath.suffix}.bak")
     try:
         import shutil
+
         shutil.copy2(str(filepath), str(backup))
     except OSError:
         pass
@@ -160,7 +162,7 @@ def rotate_backup(filepath, max_backups=3):
 def file_hash(filepath):
     """SHA256 of a file's contents, or None if missing/unreadable."""
     try:
-        with open(filepath, 'rb') as f:
+        with open(filepath, "rb") as f:
             return hashlib.sha256(f.read()).hexdigest()[:16]
     except (OSError, IOError):
         return None
@@ -169,6 +171,7 @@ def file_hash(filepath):
 # ═══════════════════════════════════════
 # SESSION STATE
 # ═══════════════════════════════════════
+
 
 class Session:
     """
@@ -217,13 +220,16 @@ class Session:
 
     def _register_crash_handler(self):
         """Register signal handlers for graceful crash recovery."""
+
         def _crash_save(signum, frame):
-            self.state["crash_log"].append({
-                "signal": signum,
-                "time": self._ts(),
-                "dirty_flags": list(self.state.get("dirty_flags", [])),
-                "plan_status": self._plan_summary() if self.state.get("plan") else None,
-            })
+            self.state["crash_log"].append(
+                {
+                    "signal": signum,
+                    "time": self._ts(),
+                    "dirty_flags": list(self.state.get("dirty_flags", [])),
+                    "plan_status": self._plan_summary() if self.state.get("plan") else None,
+                }
+            )
             try:
                 self._save()
             except Exception:
@@ -253,10 +259,7 @@ class Session:
         self.state["plan"] = {
             "name": name,
             "started": self._ts(),
-            "objectives": {
-                obj: {"status": "pending", "data": None, "checkpointed": None}
-                for obj in objectives
-            },
+            "objectives": {obj: {"status": "pending", "data": None, "checkpointed": None} for obj in objectives},
             "completed": False,
         }
         self.state["dirty_flags"] = []
@@ -286,11 +289,13 @@ class Session:
             plan["objectives"][objective]["data"] = data
 
         # Track in checkpoint log
-        self.state["checkpoints"].append({
-            "objective": objective,
-            "status": status,
-            "time": self._ts(),
-        })
+        self.state["checkpoints"].append(
+            {
+                "objective": objective,
+                "status": status,
+                "time": self._ts(),
+            }
+        )
 
         # Update dirty flags
         if status == "in_progress":
@@ -326,10 +331,7 @@ class Session:
         return {
             "name": plan["name"],
             "completed": plan["completed"],
-            "objectives": {
-                name: obj["status"]
-                for name, obj in plan["objectives"].items()
-            }
+            "objectives": {name: obj["status"] for name, obj in plan["objectives"].items()},
         }
 
     # ─── Agent State Snapshots ──────────────
@@ -355,11 +357,7 @@ class Session:
 
     def agent_lost(self):
         """Find agents that were active when last session ended (potential crash victims)."""
-        return {
-            aid: info
-            for aid, info in self.state.get("agents", {}).items()
-            if info.get("status") == "active"
-        }
+        return {aid: info for aid, info in self.state.get("agents", {}).items() if info.get("status") == "active"}
 
     # ─── Integrity Checks ──────────────────
 
@@ -407,22 +405,21 @@ class Session:
             context: Why it matters to current work
             priority: "low" | "normal" | "high"
         """
-        self.state.setdefault("scout_queue", []).append({
-            "topic": topic,
-            "context": context,
-            "priority": priority,
-            "queued": self._ts(),
-            "status": "pending",
-            "result": None,
-        })
+        self.state.setdefault("scout_queue", []).append(
+            {
+                "topic": topic,
+                "context": context,
+                "priority": priority,
+                "queued": self._ts(),
+                "status": "pending",
+                "result": None,
+            }
+        )
         self._save()
 
     def scout_results(self):
         """Get completed scout findings."""
-        return [
-            s for s in self.state.get("scout_queue", [])
-            if s.get("status") == "completed"
-        ]
+        return [s for s in self.state.get("scout_queue", []) if s.get("status") == "completed"]
 
     def scout_complete(self, index, result, quality="normal"):
         """
@@ -482,7 +479,7 @@ class Session:
         try:
             last_time = datetime.strptime(last_cp, "%Y-%m-%d %H:%M:%S")
             age = datetime.now() - last_time
-            result["staleness"] = str(age).split('.')[0]  # HH:MM:SS
+            result["staleness"] = str(age).split(".")[0]  # HH:MM:SS
         except ValueError:
             age = timedelta(days=999)
             result["staleness"] = "unknown"
@@ -513,7 +510,9 @@ class Session:
             result["reason"] = f"Session stale ({result['staleness']} old, threshold: {WARM_THRESHOLD})"
             result["recommendations"].append("Start fresh — too much may have changed")
             if plan and not plan.get("completed"):
-                result["recommendations"].append(f"Previous plan '{plan['name']}' was incomplete — review before restarting")
+                result["recommendations"].append(
+                    f"Previous plan '{plan['name']}' was incomplete — review before restarting"
+                )
 
         elif age > FRESH_THRESHOLD:
             # Warm — check if plan has completable parts
@@ -522,14 +521,18 @@ class Session:
                 pending = [k for k, v in plan["objectives"].items() if v != "completed"]
                 if completed and pending:
                     result["verdict"] = "PARTIAL"
-                    result["reason"] = f"Warm session ({result['staleness']} old) — {len(completed)}/{len(plan['objectives'])} objectives done"
+                    result["reason"] = (
+                        f"Warm session ({result['staleness']} old) — {len(completed)}/{len(plan['objectives'])} objectives done"
+                    )
                     result["recommendations"].append(f"Completed: {', '.join(completed)}")
                     result["recommendations"].append(f"Remaining: {', '.join(pending)}")
                     if dirty:
-                        result["recommendations"].append(f"DIRTY (interrupted mid-work): {', '.join(dirty)} — restart these")
+                        result["recommendations"].append(
+                            f"DIRTY (interrupted mid-work): {', '.join(dirty)} — restart these"
+                        )
                 else:
                     result["verdict"] = "RESTART"
-                    result["reason"] = f"Warm session but no partial progress to salvage"
+                    result["reason"] = "Warm session but no partial progress to salvage"
             else:
                 result["verdict"] = "RESTART"
                 result["reason"] = f"Warm session ({result['staleness']} old), no active plan"
@@ -546,7 +549,9 @@ class Session:
                 if in_progress:
                     result["recommendations"].append(f"In progress (may need re-check): {', '.join(in_progress)}")
                 if dirty:
-                    result["recommendations"].append(f"DIRTY flags (interrupted): {', '.join(dirty)} — verify before continuing")
+                    result["recommendations"].append(
+                        f"DIRTY flags (interrupted): {', '.join(dirty)} — verify before continuing"
+                    )
                 if pending:
                     result["recommendations"].append(f"Next up: {', '.join(pending)}")
             else:
@@ -561,7 +566,9 @@ class Session:
         # Crash log
         if result["crash_log"]:
             last_crash = result["crash_log"][-1]
-            result["recommendations"].append(f"Last crash: signal {last_crash.get('signal')} at {last_crash.get('time')}")
+            result["recommendations"].append(
+                f"Last crash: signal {last_crash.get('signal')} at {last_crash.get('time')}"
+            )
 
         if verbose:
             self._print_verdict(result)
@@ -593,7 +600,9 @@ class Session:
         if integrity:
             for name, status in integrity.items():
                 ic = C.GREEN if status == "ok" else C.YELLOW if status in ("changed", "no_baseline") else C.RED
-                print(f"  {ic}{'✓' if status == 'ok' else '!' if status == 'changed' else '✗'} {name}: {status}{C.RESET}")
+                print(
+                    f"  {ic}{'✓' if status == 'ok' else '!' if status == 'changed' else '✗'} {name}: {status}{C.RESET}"
+                )
 
         if result.get("recommendations"):
             print(f"\n  {C.WHITE}{C.BOLD}Recommendations:{C.RESET}")
@@ -625,6 +634,8 @@ class Session:
             done = sum(1 for v in plan["objectives"].values() if v == "completed")
             total = len(plan["objectives"])
             print(f"  {C.CYAN}Plan:{C.RESET} {plan['name']} [{done}/{total}]")
-        print(f"  {C.CYAN}Agents:{C.RESET} {agents} | {C.CYAN}Scouts:{C.RESET} {scouts} | {C.CYAN}Crashes:{C.RESET} {crashes}")
+        print(
+            f"  {C.CYAN}Agents:{C.RESET} {agents} | {C.CYAN}Scouts:{C.RESET} {scouts} | {C.CYAN}Crashes:{C.RESET} {crashes}"
+        )
         if dirty:
             print(f"  {C.YELLOW}Dirty:{C.RESET} {', '.join(dirty)}")

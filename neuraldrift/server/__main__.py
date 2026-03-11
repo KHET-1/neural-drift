@@ -6,7 +6,7 @@ import os
 import signal
 import sys
 
-from .daemon import BrainServer, PID_PATH, SOCK_PATH
+from .daemon import PID_PATH, SOCK_PATH, BrainServer
 
 
 def _read_pid() -> int | None:
@@ -72,6 +72,7 @@ def cmd_run(daemon: bool):
         os.close(devnull)
 
     import asyncio
+
     server = BrainServer()
     asyncio.run(server.run_forever())
 

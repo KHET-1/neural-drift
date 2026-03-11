@@ -169,7 +169,7 @@ class ConsoleApp:
         if event == "heartbeat":
             self._update_brain_from_stats(data)
         elif event == "fact_learned":
-            self.log_event("success", f"Learned: {data.get('topic','')}/{data.get('fact','')[:40]}")
+            self.log_event("success", f"Learned: {data.get('topic', '')}/{data.get('fact', '')[:40]}")
         elif event == "xp_changed":
             delta = data.get("delta", 0)
             total = data.get("total", 0)
@@ -310,4 +310,5 @@ def _track_name(path: str | None) -> str:
     if not path:
         return ""
     from pathlib import Path
+
     return Path(path).stem.replace("_", " ").replace("-", " ")

@@ -14,9 +14,10 @@ Usage:
     python3 -m neuraldrift.startup
 """
 
-from .output import C, success, error, warning, info, header
-from .session import Session, file_hash, BRAIN_DB, rotate_backup
 from pathlib import Path
+
+from .output import C, error, header, info, success, warning
+from .session import BRAIN_DB, Session, file_hash, rotate_backup
 
 
 def preflight(verbose=True):

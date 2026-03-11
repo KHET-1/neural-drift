@@ -4,11 +4,11 @@ from rich.layout import Layout
 from rich.panel import Panel
 from rich.text import Text
 
-from .panels.header import HeaderPanel
-from .panels.brain import BrainPanel
-from .panels.player import PlayerPanel
-from .panels.events import EventPanel
 from .panels.agents import AgentPanel
+from .panels.brain import BrainPanel
+from .panels.events import EventPanel
+from .panels.header import HeaderPanel
+from .panels.player import PlayerPanel
 
 
 class LayoutManager:
@@ -59,10 +59,5 @@ class LayoutManager:
         self.layout["agents"].update(self.agents.render())
 
         # Footer: input prompt + hints
-        footer = Text.from_markup(
-            f" {input_prompt}\n"
-            f" [dim]{input_hints}[/]"
-        )
-        self.layout["footer"].update(
-            Panel(footer, border_style="bright_black", padding=(0, 0))
-        )
+        footer = Text.from_markup(f" {input_prompt}\n [dim]{input_hints}[/]")
+        self.layout["footer"].update(Panel(footer, border_style="bright_black", padding=(0, 0)))

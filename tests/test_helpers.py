@@ -1,9 +1,11 @@
 """Tests for neuraldrift.helpers — utility functions."""
 
-import pytest
 import json
 from pathlib import Path
-from neuraldrift.helpers import save_json, load_json, timestamp
+
+import pytest
+
+from neuraldrift.helpers import load_json, save_json, timestamp
 
 
 class TestJsonRoundTrip:

@@ -48,7 +48,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from .output import C, success, warning, info, header
+from .output import C, header, info, success, warning
 
 # ═══════════════════════════════════════
 # STORAGE
@@ -64,7 +64,7 @@ def _atomic_save(data, filepath):
     filepath.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp = tempfile.mkstemp(dir=str(filepath.parent), prefix=".hb_", suffix=".tmp")
     try:
-        with os.fdopen(fd, 'w') as f:
+        with os.fdopen(fd, "w") as f:
             json.dump(data, f, indent=2, default=str)
             f.flush()
             os.fsync(f.fileno())
@@ -82,13 +82,13 @@ def _atomic_load(filepath, fallback=None):
     filepath = Path(filepath)
     if filepath.exists():
         try:
-            with open(filepath, 'r') as f:
+            with open(filepath, "r") as f:
                 return json.load(f)
         except (json.JSONDecodeError, UnicodeDecodeError):
             backup = filepath.with_suffix(filepath.suffix + ".bak")
             if backup.exists():
                 try:
-                    with open(backup, 'r') as f:
+                    with open(backup, "r") as f:
                         return json.load(f)
                 except Exception:
                     pass
@@ -98,6 +98,7 @@ def _atomic_load(filepath, fallback=None):
 # ═══════════════════════════════════════
 # HUMAN BRAIN
 # ═══════════════════════════════════════
+
 
 class HumanBrain:
     """
@@ -133,6 +134,7 @@ class HumanBrain:
         """Persist human brain atomically with backup."""
         if HUMAN_DB.exists():
             import shutil
+
             backup = HUMAN_DB.with_suffix(".json.bak")
             try:
                 shutil.copy2(str(HUMAN_DB), str(backup))
@@ -260,7 +262,7 @@ class HumanBrain:
         self.save()
         success(f"Human Brain belongs to: {name}")
         if motto:
-            print(f"  {C.DIM}\"{motto}\"{C.RESET}")
+            print(f'  {C.DIM}"{motto}"{C.RESET}')
 
     def whoami(self):
         """Who owns this brain?"""
@@ -274,13 +276,15 @@ class HumanBrain:
         header("HUMAN BRAIN")
         print(f"  {C.WHITE}{C.BOLD}{name}{C.RESET}")
         if motto:
-            print(f"  {C.DIM}\"{motto}\"{C.RESET}")
+            print(f'  {C.DIM}"{motto}"{C.RESET}')
         print()
-        print(f"  {C.CYAN}Thoughts:{C.RESET} {thoughts}  {C.YELLOW}Ideas:{C.RESET} {ideas}  {C.MAGENTA}Stories:{C.RESET} {stories}  {C.GREEN}Journal:{C.RESET} {journal}")
+        print(
+            f"  {C.CYAN}Thoughts:{C.RESET} {thoughts}  {C.YELLOW}Ideas:{C.RESET} {ideas}  {C.MAGENTA}Stories:{C.RESET} {stories}  {C.GREEN}Journal:{C.RESET} {journal}"
+        )
         moods = self.db.get("moods", [])
         if moods:
             last = moods[-1]
-            print(f"  {C.DIM}Last mood: {last['mood']} — \"{last.get('note', '')}\"{C.RESET}")
+            print(f'  {C.DIM}Last mood: {last["mood"]} — "{last.get("note", "")}"{C.RESET}')
 
     # ─── Thoughts ───────────────────────────
 
@@ -451,7 +455,7 @@ class HumanBrain:
         for c in conns:
             print(f"  {C.CYAN}{c['from']}{C.RESET} {C.DIM}──→{C.RESET} {C.YELLOW}{c['to']}{C.RESET}")
             if c.get("why"):
-                print(f"       {C.DIM}\"{c['why']}\"{C.RESET}")
+                print(f'       {C.DIM}"{c["why"]}"{C.RESET}')
 
     # ─── Moods ──────────────────────────────
 
@@ -464,9 +468,18 @@ class HumanBrain:
             note: Context for the mood
         """
         mood_icons = {
-            "excited": "🔥", "happy": "😊", "curious": "🤔", "zen": "🧘",
-            "frustrated": "😤", "tired": "😴", "focused": "🎯", "creative": "🎨",
-            "anxious": "😰", "proud": "💪", "grateful": "🙏", "inspired": "✨",
+            "excited": "🔥",
+            "happy": "😊",
+            "curious": "🤔",
+            "zen": "🧘",
+            "frustrated": "😤",
+            "tired": "😴",
+            "focused": "🎯",
+            "creative": "🎨",
+            "anxious": "😰",
+            "proud": "💪",
+            "grateful": "🙏",
+            "inspired": "✨",
         }
         icon = mood_icons.get(feeling.lower(), "💭")
 
@@ -490,15 +503,24 @@ class HumanBrain:
 
         header("MOOD TIMELINE")
         mood_icons = {
-            "excited": "🔥", "happy": "😊", "curious": "🤔", "zen": "🧘",
-            "frustrated": "😤", "tired": "😴", "focused": "🎯", "creative": "🎨",
-            "anxious": "😰", "proud": "💪", "grateful": "🙏", "inspired": "✨",
+            "excited": "🔥",
+            "happy": "😊",
+            "curious": "🤔",
+            "zen": "🧘",
+            "frustrated": "😤",
+            "tired": "😴",
+            "focused": "🎯",
+            "creative": "🎨",
+            "anxious": "😰",
+            "proud": "💪",
+            "grateful": "🙏",
+            "inspired": "✨",
         }
         for m in reversed(all_moods):
             icon = mood_icons.get(m["mood"].lower(), "💭")
             print(f"  {icon} {C.WHITE}{m['mood']:<14}{C.RESET} {C.DIM}{m['when']}{C.RESET}")
             if m.get("note"):
-                print(f"     {C.DIM}\"{m['note']}\"{C.RESET}")
+                print(f'     {C.DIM}"{m["note"]}"{C.RESET}')
 
     # ─── Journal ────────────────────────────
 
@@ -571,6 +593,7 @@ class HumanBrain:
 
         if all_tags:
             from collections import Counter
+
             tag_counts = Counter(all_tags).most_common(10)
             tag_str = "  ".join(f"{C.CYAN}#{tag}{C.RESET}({count})" for tag, count in tag_counts)
             print(f"\n  {C.WHITE}{C.BOLD}Top Tags:{C.RESET} {tag_str}")
@@ -588,7 +611,7 @@ class HumanBrain:
             last = moods[-1]
             print(f"\n  {C.DIM}Current vibe: {last['mood']}")
             if last.get("note"):
-                print(f"  \"{last['note']}\"{C.RESET}")
+                print(f'  "{last["note"]}"{C.RESET}')
 
         print()
 
